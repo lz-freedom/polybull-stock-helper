@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Polybull - Build Your SaaS Faster',
-  description: 'A modern SaaS starter template with Next.js, PostgreSQL, and Stripe',
+    title: 'iVibeFinance - Smart Stock Analysis',
+    description: 'AI-powered stock analysis and financial insights platform',
 };
 
 export default function RootLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }) {
-  return children;
+    return children;
 }

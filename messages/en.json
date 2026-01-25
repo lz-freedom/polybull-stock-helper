@@ -1,6 +1,17 @@
 {
+  "home": {
+    "welcomeTitle": "What financial insights are you exploring today?",
+    "welcomeSubtitle": "Ask me anything about stocks, markets, or investments",
+    "inputPlaceholder": "Ask me anything about stocks, markets, or investments...",
+    "tryThese": "Try these questions",
+    "prompt1": "Analyze Apple's (AAPL) latest earnings report",
+    "prompt2": "Which sectors are worth watching in today's market?",
+    "prompt3": "Compare Tesla and BYD's valuations",
+    "prompt4": "What major news is affecting the stock market recently?",
+    "disclaimer": "AI can make mistakes. Please verify important information. Investing involves risk."
+  },
   "common": {
-    "appName": "Polybull",
+    "appName": "iVibeFinance",
     "signIn": "Sign In",
     "signUp": "Sign Up",
     "signOut": "Sign Out",
@@ -24,6 +35,25 @@
     "success": "Success",
     "error": "Error",
     "warning": "Warning"
+  },
+  "sidebar": {
+    "newChat": "New Chat",
+    "financeWiki": "Finance Wiki",
+    "marketPulse": "Market Pulse",
+    "newFeature": "New",
+    "appearance": "Appearance",
+    "language": "Language",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "learnMore": "Learn More",
+    "signInOrUp": "Sign In / Sign Up",
+    "enterEmail": "Enter your email",
+    "continue": "Continue",
+    "or": "or",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "agreeText": "*By creating an account, you agree to iVibeFinance's"
   },
   "auth": {
     "email": "Email",

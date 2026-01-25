@@ -1,6 +1,17 @@
 {
+  "home": {
+    "welcomeTitle": "今天最想探索的财经新鲜事是？",
+    "welcomeSubtitle": "AI 助手为您解答关于股票、市场和投资的问题",
+    "inputPlaceholder": "问我任何关于股票、市场或投资的问题...",
+    "tryThese": "试试这些问题",
+    "prompt1": "分析苹果公司 (AAPL) 的最新财报",
+    "prompt2": "今日 A 股市场有哪些值得关注的板块？",
+    "prompt3": "比较特斯拉和比亚迪的估值",
+    "prompt4": "最近有哪些影响股市的重大新闻？",
+    "disclaimer": "AI 可能会出错。请核实重要信息。投资有风险，入市需谨慎。"
+  },
   "common": {
-    "appName": "Polybull",
+    "appName": "iVibeFinance",
     "signIn": "登录",
     "signUp": "注册",
     "signOut": "退出登录",
@@ -24,6 +35,25 @@
     "success": "成功",
     "error": "错误",
     "warning": "警告"
+  },
+  "sidebar": {
+    "newChat": "新聊天",
+    "financeWiki": "财经百科",
+    "marketPulse": "财经脉冲",
+    "newFeature": "新功能",
+    "appearance": "外观",
+    "language": "语言",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统",
+    "learnMore": "了解更多",
+    "signInOrUp": "注册 / 登录",
+    "enterEmail": "请输入邮箱地址",
+    "continue": "继续",
+    "or": "或",
+    "privacyPolicy": "隐私政策",
+    "termsOfService": "服务条款",
+    "agreeText": "*通过创建账户，您同意 iVibeFinance 的"
   },
   "auth": {
     "email": "邮箱",

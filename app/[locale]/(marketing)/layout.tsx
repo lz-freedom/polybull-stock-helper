@@ -1,7 +1,9 @@
+import { SessionProvider } from '@features/shared/providers/session-provider';
+
 export default function MarketingLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }) {
-  return <>{children}</>;
+    return <SessionProvider>{children}</SessionProvider>;
 }

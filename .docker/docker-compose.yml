@@ -1,0 +1,58 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile
+      args:
+        - POSTGRES_URL=${POSTGRES_URL}
+        - AUTH_SECRET=${AUTH_SECRET}
+        - BASE_URL=${BASE_URL}
+        - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+        - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+        - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+        - OAUTH_GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID}
+        - OAUTH_GOOGLE_CLIENT_SECRET=${OAUTH_GOOGLE_CLIENT_SECRET}
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - POSTGRES_URL=${POSTGRES_URL}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - BASE_URL=${BASE_URL}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OAUTH_GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAUTH_GOOGLE_CLIENT_SECRET=${OAUTH_GOOGLE_CLIENT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ivibefinance-network
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-ivibefinance}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ivibefinance}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ivibefinance-network
+
+volumes:
+  postgres_data:
+
+networks:
+  ivibefinance-network:
+    driver: bridge

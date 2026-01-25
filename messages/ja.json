@@ -1,6 +1,17 @@
 {
+  "home": {
+    "welcomeTitle": "今日はどんな金融情報を探していますか？",
+    "welcomeSubtitle": "株式、市場、投資についてお気軽にお聞きください",
+    "inputPlaceholder": "株式、市場、投資について何でもお聞きください...",
+    "tryThese": "こちらの質問をお試しください",
+    "prompt1": "Apple (AAPL) の最新決算を分析",
+    "prompt2": "今日の市場で注目すべきセクターは？",
+    "prompt3": "テスラとBYDのバリュエーションを比較",
+    "prompt4": "最近の株式市場に影響を与えるニュースは？",
+    "disclaimer": "AIは間違いを犯す可能性があります。重要な情報は必ずご確認ください。投資にはリスクが伴います。"
+  },
   "common": {
-    "appName": "Polybull",
+    "appName": "iVibeFinance",
     "signIn": "ログイン",
     "signUp": "新規登録",
     "signOut": "ログアウト",
@@ -24,6 +35,25 @@
     "success": "成功",
     "error": "エラー",
     "warning": "警告"
+  },
+  "sidebar": {
+    "newChat": "新しいチャット",
+    "financeWiki": "金融百科",
+    "marketPulse": "マーケットパルス",
+    "newFeature": "新機能",
+    "appearance": "外観",
+    "language": "言語",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "learnMore": "詳細を見る",
+    "signInOrUp": "ログイン / 登録",
+    "enterEmail": "メールアドレスを入力",
+    "continue": "続ける",
+    "or": "または",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約",
+    "agreeText": "*アカウントを作成することで、iVibeFinance の以下に同意したことになります"
   },
   "auth": {
     "email": "メールアドレス",

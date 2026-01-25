@@ -1,18 +1,14 @@
-import { Suspense } from 'react';
-import { LoginForm } from '@/components/auth/login-form';
+import { redirect } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
 interface SignInPageProps {
-  params: Promise<{ locale: string }>;
+    params: Promise<{ locale: string }>;
 }
 
 export default async function SignInPage({ params }: SignInPageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+    const { locale } = await params;
+    setRequestLocale(locale);
 
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <LoginForm mode="signin" locale={locale} />
-    </Suspense>
-  );
+    // 重定向到首页并触发登录弹窗
+    redirect(`/${locale}?auth=required`);
 }

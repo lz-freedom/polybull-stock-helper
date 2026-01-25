@@ -1,4 +1,4 @@
-# Polybull Stock Helper
+# iVibeFinance
 
 基于 Next.js 15 的全栈 SaaS 应用，支持多语言、多角色权限和管理后台。
 
@@ -29,37 +29,18 @@
 ### 1. 克隆项目
 
 ```bash
-git clone git@github.com:lz-freedom/polybull-stock-helper.git
-cd polybull-stock-helper
+git clone <your-repo-url>
+cd ivibefinance
 pnpm install
 ```
 
 ### 2. 配置环境变量
 
-```bash
-cp .env.example .env.local
-```
+环境配置文件位于 `env/` 目录：
 
-编辑 `.env.local`：
-
-```env
-# 数据库
-POSTGRES_URL=postgresql://user:password@localhost:5432/polybull
-
-# Auth.js
-AUTH_SECRET=your-secret-key  # 运行: openssl rand -base64 32
-
-# Google OAuth (https://console.cloud.google.com/apis/credentials)
-GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=xxx
-
-# Stripe
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
-
-# App
-BASE_URL=http://localhost:3000
-```
+- `env/.env` - 开发环境
+- `env/.env.alpha` - Alpha 测试环境
+- `env/.env.release` - 生产环境
 
 ### 3. 初始化数据库
 
@@ -71,7 +52,9 @@ pnpm db:seed
 ### 4. 启动开发服务器
 
 ```bash
-pnpm dev
+pnpm dev           # 开发环境
+pnpm dev:alpha     # Alpha 环境
+pnpm dev:release   # Release 环境
 ```
 
 访问 http://localhost:3000
@@ -103,6 +86,10 @@ pnpm dev
 │   ├── auth/               # 认证配置
 │   ├── db/                 # 数据库
 │   └── payments/           # Stripe
+├── env/                    # 环境配置
+│   ├── .env                # 开发环境
+│   ├── .env.alpha          # Alpha 环境
+│   └── .env.release        # 生产环境
 ├── i18n/                   # 国际化配置
 └── messages/               # 翻译文件
 ```
@@ -110,18 +97,21 @@ pnpm dev
 ## 🔧 常用命令
 
 ```bash
-pnpm dev          # 启动开发服务器
-pnpm build        # 构建生产版本
-pnpm db:migrate   # 运行数据库迁移
-pnpm db:seed      # 填充测试数据
-pnpm db:studio    # 打开 Drizzle Studio
+# 开发
+pnpm dev              # 开发环境启动
+pnpm dev:alpha        # Alpha 环境启动
+pnpm dev:release      # Release 环境启动
+
+# 构建
+pnpm build            # 开发环境构建
+pnpm build:alpha      # Alpha 环境构建
+pnpm build:release    # Release 环境构建
+
+# 数据库
+pnpm db:migrate       # 运行数据库迁移
+pnpm db:seed          # 填充测试数据
+pnpm db:studio        # 打开 Drizzle Studio
 ```
-
-测试账户：
-
-超级管理员：admin@admin.com / admin123
-管理员：moderator@test.com / admin123
-普通用户：test@test.com / admin123
 
 ## 📄 License
 
