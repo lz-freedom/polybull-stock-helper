@@ -91,6 +91,13 @@ const SYNTHESIS_SYSTEM_PROMPT = `You are a senior investment analyst synthesizin
 Identify genuine consensus vs apparent agreement. Highlight meaningful disagreements.
 Be objective and highlight uncertainty where it exists.`;
 
+// Export prompt builders/constants for Mastra workflows (no behavior change).
+export const CONSENSUS_ANALYSIS_MODELS = ANALYSIS_MODELS;
+export const CONSENSUS_ANALYSIS_SYSTEM_PROMPT = ANALYSIS_SYSTEM_PROMPT;
+export const CONSENSUS_SYNTHESIS_SYSTEM_PROMPT = SYNTHESIS_SYSTEM_PROMPT;
+export const buildConsensusAnalysisPrompt = buildAnalysisPrompt;
+export const buildConsensusSynthesisPrompt = buildSynthesisPrompt;
+
 async function updateStepStatus(
     stepId: number,
     status: string,

@@ -48,6 +48,12 @@ const RESEARCH_ROLES = [
     },
 ];
 
+// Export prompt builders/constants for Mastra workflows (no behavior change).
+export const RESEARCH_ROLE_DEFINITIONS = RESEARCH_ROLES;
+export const buildResearchPlanningPrompt = buildPlanningPrompt;
+export const buildResearchTaskPrompt = buildResearchPrompt;
+export const buildResearchSynthesisPrompt = buildSynthesisPrompt;
+
 function buildPlanningPrompt(
     query: string,
     snapshot: FactsSnapshot,
