@@ -372,6 +372,26 @@ export const agentRunSteps = pgTable(
 );
 
 // ============================================
+// Agent Run Events - Agent 运行事件
+// 记录 workflow emit 的所有事件 (NDJSON)
+// ============================================
+
+export const agentRunEvents = pgTable(
+    'agent_run_events',
+    {
+        id: serial('id').primaryKey(),
+        agentRunId: integer('agent_run_id')
+            .notNull()
+            .references(() => agentRuns.id, { onDelete: 'cascade' }),
+        eventId: varchar('event_id', { length: 64 }).notNull(),
+        type: varchar('type', { length: 50 }).notNull(),
+        payload: jsonb('payload').notNull(),
+        createdAt: timestamp('created_at').notNull().defaultNow(),
+    },
+    (table) => [index('agent_run_events_run_id_id_idx').on(table.agentRunId, table.id)],
+);
+
+// ============================================
 // Reports - 共识报告 / 深度研究报告
 // ============================================
 
@@ -521,6 +541,7 @@ export const agentRunsRelations = relations(agentRuns, ({ one, many }) => ({
         references: [factsSnapshots.id],
     }),
     steps: many(agentRunSteps),
+    events: many(agentRunEvents),
     reports: many(reports),
     chatMessages: many(chatMessages),
 }));
@@ -528,6 +549,13 @@ export const agentRunsRelations = relations(agentRuns, ({ one, many }) => ({
 export const agentRunStepsRelations = relations(agentRunSteps, ({ one }) => ({
     agentRun: one(agentRuns, {
         fields: [agentRunSteps.agentRunId],
+        references: [agentRuns.id],
+    }),
+}));
+
+export const agentRunEventsRelations = relations(agentRunEvents, ({ one }) => ({
+    agentRun: one(agentRuns, {
+        fields: [agentRunEvents.agentRunId],
         references: [agentRuns.id],
     }),
 }));
@@ -581,6 +609,9 @@ export type NewAgentRun = typeof agentRuns.$inferInsert;
 
 export type AgentRunStep = typeof agentRunSteps.$inferSelect;
 export type NewAgentRunStep = typeof agentRunSteps.$inferInsert;
+
+export type AgentRunEvent = typeof agentRunEvents.$inferSelect;
+export type NewAgentRunEvent = typeof agentRunEvents.$inferInsert;
 
 export type Report = typeof reports.$inferSelect;
 export type NewReport = typeof reports.$inferInsert;
