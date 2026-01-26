@@ -20,7 +20,11 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.18",
+    "@ai-sdk/react": "^3.0.51",
     "@auth/drizzle-adapter": "^1.11.1",
+    "@mastra/ai-sdk": "^1.0.2",
+    "@mastra/core": "^1.0.4",
+    "@mastra/loggers": "^1.0.0",
     "@tailwindcss/postcss": "4.1.7",
     "@types/node": "^22.15.18",
     "@types/react": "19.1.4",
