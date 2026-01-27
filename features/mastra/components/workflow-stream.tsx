@@ -230,7 +230,7 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
                 </Card>
 
                 {error && (
-                    <div className="bg-destructive/10 text-destructive p-4 rounded-lg flex items-center gap-2">
+                    <div className="bg-destructive text-destructive-foreground p-4 rounded-lg flex items-center gap-2">
                         <XCircle className="h-5 w-5" />
                         <p>{error}</p>
                     </div>
@@ -251,7 +251,7 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="flex-1 flex items-center justify-center text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground bg-muted rounded-xl border border-dashed">
                         <div className="text-center">
                             <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
                             <p>Analysis results will appear here</p>
@@ -320,7 +320,7 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
 
                             if (event.type === 'tool-call') {
                                 return (
-                                    <div key={index} className="pl-4 border-l-2 border-indigo-200 py-1 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-r text-sm">
+                                    <div key={index} className="pl-4 border-l-2 border-indigo-200 py-1 bg-indigo-50 dark:bg-indigo-950 rounded-r text-sm">
                                         <div className="flex items-center gap-2">
                                             <Badge variant="outline" className="text-[10px] h-5 border-indigo-200 text-indigo-700">TOOL</Badge>
                                             <span className="font-mono text-xs">{event.toolName}</span>
@@ -334,14 +334,14 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
 
                             if (event.type === 'divergence') {
                                 return (
-                                    <div key={index} className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-lg">
+                                    <div key={index} className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 rounded-lg">
                                         <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium text-sm mb-2">
                                             <GitBranch className="h-4 w-4" />
                                             <span>Divergence: {event.topic}</span>
                                         </div>
                                         <div className="space-y-2">
                                             {event.views.map((view, vIndex) => (
-                                                <div key={vIndex} className="text-xs bg-white dark:bg-black/20 p-2 rounded border border-amber-100 dark:border-amber-900/50">
+                                                <div key={vIndex} className="text-xs bg-white dark:bg-slate-950 p-2 rounded border border-amber-100 dark:border-amber-900">
                                                     <div className="flex justify-between font-semibold mb-1">
                                                         <span>{view.analyst}</span>
                                                         <Badge variant={view.stance === 'bullish' ? 'default' : view.stance === 'bearish' ? 'destructive' : 'secondary'} className="text-[10px] py-0 h-4">
@@ -372,7 +372,7 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
                                             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                         </button>
                                         {isExpanded && (
-                                            <div className="p-3 border-t bg-muted/30 overflow-x-auto">
+                                            <div className="p-3 border-t bg-muted overflow-x-auto">
                                                 <pre className="text-xs font-mono whitespace-pre-wrap">
                                                     {typeof event.data === 'string' 
                                                         ? event.data 
@@ -386,7 +386,7 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
 
                             if (event.type === 'error') {
                                 return (
-                                    <div key={index} className="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg text-sm flex items-start gap-2">
+                                    <div key={index} className="p-3 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 rounded-lg text-sm flex items-start gap-2">
                                         <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                                         <div>
                                             <p className="font-semibold">Error</p>
