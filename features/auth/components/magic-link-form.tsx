@@ -24,11 +24,26 @@ export function MagicLinkForm({ callbackUrl = '/dashboard' }: MagicLinkFormProps
         setIsLoading(true);
 
         try {
-            await signIn('email', { 
-                email, 
-                callbackUrl,
-                redirect: false,
+            const res = await fetch('/api/auth/signin/email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    callbackUrl,
+                    redirect: false,
+                    json: true,
+                }),
             });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                console.error('Magic link response error:', data);
+                throw new Error(data.message || 'Failed to send magic link');
+            }
+            
             setIsSent(true);
         } catch (error) {
             console.error('Magic link error:', error);

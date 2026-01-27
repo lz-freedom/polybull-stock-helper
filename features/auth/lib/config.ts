@@ -1,9 +1,10 @@
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import Nodemailer from 'next-auth/providers/nodemailer';
 import { db } from '@/lib/db/drizzle';
-import { users } from '@/lib/db/schema';
+import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { comparePasswords } from './session';
 import { ROLES, type Role } from './roles';
@@ -26,6 +27,12 @@ declare module 'next-auth' {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+    adapter: DrizzleAdapter(db, {
+        usersTable: users as any,
+        accountsTable: accounts as any,
+        sessionsTable: sessions as any,
+        verificationTokensTable: verificationTokens as any,
+    }),
     session: {
         strategy: 'jwt',
         maxAge: 30 * 24 * 60 * 60, // 30 days

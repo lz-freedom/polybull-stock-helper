@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { X, Mail, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
+import { X, Mail, ArrowRight, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@features/shared/components/ui/button';
 import { Logo } from '@features/shared/components/common/logo';
 import { usePopupLogin } from '@features/auth/hooks/use-popup-login';
@@ -17,8 +17,7 @@ interface AuthModalProps {
 export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [step, setStep] = useState<'email' | 'code'>('email');
-    const [code, setCode] = useState(['', '', '', '', '', '']);
+    const [step, setStep] = useState<'email' | 'sent'>('email');
     const t = useTranslations('sidebar');
 
     const { isLoading: isGoogleLoading, openGoogleLogin } = usePopupLogin({
@@ -37,36 +36,42 @@ export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
         e.preventDefault();
         if (!email) return;
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsLoading(false);
-        setStep('code');
-    };
 
-    const handleCodeChange = (index: number, value: string) => {
-        if (value.length > 1) {
-            value = value.slice(-1);
-        }
-        const newCode = [...code];
-        newCode[index] = value;
-        setCode(newCode);
+        try {
+            const csrfRes = await fetch('/api/auth/csrf');
+            const { csrfToken } = await csrfRes.json();
 
-        if (value && index < 5) {
-            const nextInput = document.getElementById(`code-${index + 1}`);
-            nextInput?.focus();
-        }
-    };
+            const res = await fetch('/api/auth/signin/email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    csrfToken,
+                    callbackUrl: window.location.href,
+                    redirect: false,
+                    json: true,
+                }),
+            });
 
-    const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-        if (e.key === 'Backspace' && !code[index] && index > 0) {
-            const prevInput = document.getElementById(`code-${index - 1}`);
-            prevInput?.focus();
+            if (!res.ok) {
+                const data = await res.json();
+                console.error('Magic link response error:', data);
+                throw new Error(data.message || 'Failed to send');
+            }
+
+            setStep('sent');
+        } catch (error) {
+            console.error('Magic link error:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const resetModal = () => {
         setStep('email');
         setEmail('');
-        setCode(['', '', '', '', '', '']);
         onClose();
     };
 
@@ -195,46 +200,27 @@ export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
                             </>
                         ) : (
                             <>
-                                {/* Verification Code Step */}
-                                <button
-                                    onClick={() => setStep('email')}
-                                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
-                                >
-                                    <ArrowLeft className="h-4 w-4" />
-                                    <span className="text-sm">Back</span>
-                                </button>
-
-                                <h2 className="text-2xl font-semibold text-foreground mb-2">
-                                    Verification
-                                </h2>
-                                <p className="text-muted-foreground mb-8">
-                                    Verification code sent to <span className="text-foreground font-medium">{email}</span>
-                                </p>
-
-                                {/* Code Input */}
-                                <div className="flex gap-2 justify-center mb-6">
-                                    {code.map((digit, index) => (
-                                        <input
-                                            key={index}
-                                            id={`code-${index}`}
-                                            type="text"
-                                            inputMode="numeric"
-                                            maxLength={1}
-                                            value={digit}
-                                            onChange={(e) => handleCodeChange(index, e.target.value)}
-                                            onKeyDown={(e) => handleKeyDown(index, e)}
-                                            className="w-11 h-14 bg-background border border-border rounded-xl text-center text-xl font-semibold text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                                        />
-                                    ))}
+                                <div className="text-center py-6">
+                                    <div className="flex justify-center mb-6">
+                                        <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
+                                            <CheckCircle className="h-8 w-8 text-primary" />
+                                        </div>
+                                    </div>
+                                    <h2 className="text-2xl font-semibold text-foreground mb-3">
+                                        Check your inbox
+                                    </h2>
+                                    <p className="text-muted-foreground mb-8">
+                                        We've sent a login link to <br />
+                                        <span className="text-foreground font-medium">{email}</span>
+                                    </p>
+                                    <Button
+                                        variant="outline"
+                                        onClick={resetModal}
+                                        className="w-full h-12 rounded-xl"
+                                    >
+                                        Close
+                                    </Button>
                                 </div>
-
-                                {/* Resend */}
-                                <p className="text-center text-muted-foreground text-sm">
-                                    Didn't receive the code?{' '}
-                                    <button className="text-primary hover:underline font-medium">
-                                        Resend code
-                                    </button>
-                                </p>
                             </>
                         )}
                     </div>

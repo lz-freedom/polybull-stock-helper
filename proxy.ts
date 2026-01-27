@@ -1,7 +1,9 @@
-import createIntlMiddleware from 'next-intl/middleware';
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { routing, locales, Locale } from './i18n/routing';
+import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { locales, routing } from './i18n/routing';
+
+type Locale = (typeof locales)[number];
 
 // 创建 next-intl 中间件
 const intlMiddleware = createIntlMiddleware(routing);
@@ -18,7 +20,7 @@ const publicPaths = [
     '/sign-up',
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // API 路由直接放行
