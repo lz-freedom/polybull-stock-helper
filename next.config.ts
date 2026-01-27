@@ -6,6 +6,10 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const nextConfig: NextConfig = {
     output: 'standalone',
     cacheComponents: false,
+    turbopack: {
+        // Prevent Next.js from inferring the workspace root from unrelated lockfiles.
+        root: process.cwd(),
+    },
 };
 
 export default withNextIntl(nextConfig);
