@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@features/shared/components/ui/card';
-import { Button } from '@features/shared/components/ui/button';
-import { Input } from '@features/shared/components/ui/input';
-import { Textarea } from '@features/shared/components/ui/textarea';
-import { Label } from '@features/shared/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Search, BookOpen, FileText, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

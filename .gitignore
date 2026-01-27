@@ -40,3 +40,6 @@ postgres_data/
 # env files (keep .env.*.example, ignore actual secrets)
 env/.env
 env/.env.docker
+
+# Mastra
+.mastra/

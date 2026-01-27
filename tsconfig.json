@@ -25,11 +25,10 @@
     ],
     "paths": {
       "@/*": [
-        "./*",
         "./src/*"
       ],
       "@features/*": [
-        "./features/*"
+        "./src/features/*"
       ]
     }
   },

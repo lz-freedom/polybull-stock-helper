@@ -4,7 +4,7 @@ import { db } from '@/lib/db/drizzle';
 import { users, teams, activityLogs } from '@/lib/db/schema';
 import { count, desc } from 'drizzle-orm';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@features/shared/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Building2, Activity, CreditCard } from 'lucide-react';
 
 interface AdminPageProps {

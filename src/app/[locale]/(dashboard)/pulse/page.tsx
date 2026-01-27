@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@features/shared/components/ui/card';
-import { Input } from '@features/shared/components/ui/input';
-import { Button } from '@features/shared/components/ui/button';
-import { Label } from '@features/shared/components/ui/label';
-import { Badge } from '@features/shared/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Minus, Activity, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { ConsensusReport, ModelAnalysis, Stance } from '@features/agents/lib/schemas';
 import { cn } from '@features/shared/lib/utils';

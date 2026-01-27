@@ -4,8 +4,8 @@ import { db } from '@/lib/db/drizzle';
 import { activityLogs, users } from '@/lib/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@features/shared/components/ui/card';
-import { Badge } from '@features/shared/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface ActivityPageProps {
     params: Promise<{ locale: string }>;

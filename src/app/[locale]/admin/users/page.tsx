@@ -4,9 +4,9 @@ import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema';
 import { desc, isNull } from 'drizzle-orm';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@features/shared/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@features/shared/components/ui/avatar';
-import { Badge } from '@features/shared/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { getRoleDisplayName } from '@features/auth/lib/roles';
 
 interface UsersPageProps {

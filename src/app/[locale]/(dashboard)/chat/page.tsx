@@ -2,9 +2,9 @@
 
 import { use, useState, useEffect, useRef } from 'react';
 import { Send, MessageSquare, Plus, RefreshCw, Bot, User as UserIcon, TrendingUp } from 'lucide-react';
-import { Button } from '@/features/shared/components/ui/button';
-import { Input } from '@/features/shared/components/ui/input';
-import { cn } from '@/features/shared/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { ChatSession, ChatMessage } from '@/lib/db/schema';
 
 type MessageWithStatus = ChatMessage & {

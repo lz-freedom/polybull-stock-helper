@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { requireAuth } from '@features/auth/lib/admin-guard';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@features/shared/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Settings, Users, Activity, CreditCard } from 'lucide-react';
 

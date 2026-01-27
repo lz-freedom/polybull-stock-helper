@@ -6,7 +6,7 @@ import { Sparkles, Send, TrendingUp, BarChart3, LineChart, Newspaper, ChevronDow
 import { useTranslations } from 'next-intl';
 import { AppSidebar } from '@features/shared/components/common/app-sidebar';
 import { AuthModal } from '@features/shared/components/common/auth-modal';
-import { Button } from '@features/shared/components/ui/button';
+import { Button } from '@/components/ui/button';
 
 interface MainPageClientProps {
     locale: string;
@@ -41,12 +41,12 @@ export function MainPageClient({ locale }: MainPageClientProps) {
     }, [searchParams, router, locale]);
 
     return (
-        <div className="min-h-screen bg-[#F7F8FA] dark:bg-[#0F1114] flex">
+        <div className="h-screen overflow-hidden bg-[#F7F8FA] dark:bg-[#0F1114] flex">
             {/* Sidebar */}
             <AppSidebar locale={locale} />
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col relative bg-[#F7F8FA] dark:bg-[#0F1114]">
+            <main className="flex-1 flex flex-col relative bg-[#F7F8FA] dark:bg-[#0F1114] overflow-y-auto">
                 {/* Chat Area */}
                 <div
                     className="flex-1 flex items-center justify-center p-6 md:p-8"
@@ -122,9 +122,10 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                     <span>Top Asked on iVibe (24h)</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {quickPrompts.map((prompt, idx) => (
+                                    {quickPrompts.map((prompt) => (
                                         <button
-                                            key={idx}
+                                            key={prompt.textKey}
+                                            type="button"
                                             className="flex items-center gap-3 p-3 bg-white dark:bg-[#14171C] hover:bg-white dark:hover:bg-[#1A1E24] border border-black/10 dark:border-white/10 rounded-[12px] text-left transition-all duration-200 group"
                                         >
                                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500/10 to-orange-500/10 flex items-center justify-center flex-shrink-0 group-hover:from-pink-500/20 group-hover:to-orange-500/20 transition-colors">
@@ -145,7 +146,7 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                     <CalendarDays className="h-4 w-4" />
                                     <span>事件日历</span>
                                 </div>
-                                <button className="text-xs text-muted-foreground hover:text-foreground">查看更多</button>
+                                <button type="button" className="text-xs text-muted-foreground hover:text-foreground">查看更多</button>
                             </div>
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="flex flex-col gap-2 w-full">
@@ -168,11 +169,11 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                     <Search className="h-4 w-4" />
                                     <span>热门话题</span>
                                 </div>
-                                <button className="text-xs text-muted-foreground hover:text-foreground">查看更多</button>
+                                <button type="button" className="text-xs text-muted-foreground hover:text-foreground">查看更多</button>
                             </div>
                             <div className="space-y-2">
-                                {quickPrompts.map((prompt, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 text-sm text-foreground/80 dark:text-slate-200">
+                                {quickPrompts.map((prompt) => (
+                                    <div key={prompt.textKey} className="flex items-center gap-3 text-sm text-foreground/80 dark:text-slate-200">
                                         <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-500">热门问题</span>
                                         <span className="truncate flex-1">{t(prompt.textKey)}</span>
                                     </div>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@features/shared/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { CircleIcon, Home, LogOut, Settings, Shield } from 'lucide-react';
 import {
     DropdownMenu,
@@ -11,8 +11,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
-} from '@features/shared/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@features/shared/components/ui/avatar';
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useParams } from 'next/navigation';
 import { LocaleSwitcher } from '@features/shared/components/common/locale-switcher';
 import { SessionProvider } from '@features/shared/providers/session-provider';

@@ -1,22 +1,25 @@
 {
   "private": true,
   "scripts": {
-    "dev": "dotenv -e env/.env -- next dev --turbopack",
-    "dev:alpha": "dotenv -e env/.env.alpha -- next dev --turbopack",
-    "dev:release": "dotenv -e env/.env.release -- next dev --turbopack",
+    "dev": "dotenv -e env/.env -- next dev --turbopack -p 3333",
+    "dev:alpha": "dotenv -e env/.env.alpha -- next dev --turbopack -p 3333",
+    "dev:release": "dotenv -e env/.env.release -- next dev --turbopack -p 3333",
     "build": "dotenv -e env/.env -- next build",
     "build:alpha": "dotenv -e env/.env.alpha -- next build",
     "build:release": "dotenv -e env/.env.release -- next build",
-    "start": "next start",
-    "start:alpha": "next start",
-    "start:release": "next start",
-    "db:setup": "npx tsx lib/db/setup.ts",
-    "db:seed": "npx tsx lib/db/seed.ts",
+    "start": "next start -p 3333",
+    "start:alpha": "next start -p 3333",
+    "start:release": "next start -p 3333",
+    "db:setup": "npx tsx src/lib/db/setup.ts",
+    "db:seed": "npx tsx src/lib/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint . --max-warnings 0",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "mastra:dev": "dotenv -e env/.env -- npx mastra dev",
+    "mastra:dev:alpha": "dotenv -e env/.env.alpha -- npx mastra dev",
+    "mastra:dev:release": "dotenv -e env/.env.release -- npx mastra dev"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.18",
@@ -66,6 +69,7 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.4",
+    "tsconfig-paths": "^4.2.0",
     "typescript-eslint": "^8.53.1"
   }
 }
