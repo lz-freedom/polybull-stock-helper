@@ -261,20 +261,20 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
             </div>
 
             <Card className="flex flex-col overflow-hidden h-full">
-                <CardHeader className="pb-3 border-b bg-muted/30">
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Brain className="h-5 w-5 text-orange-500" />
-                            Agent Thought Process
-                        </CardTitle>
-                        {isRunning && (
-                            <Badge variant="outline" className="animate-pulse text-orange-500 border-orange-200 bg-orange-50">
-                                Live
-                            </Badge>
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto p-0 bg-slate-50 dark:bg-slate-950/50">
+                        <CardHeader className="pb-3 border-b bg-muted">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <Brain className="h-5 w-5 text-orange-500" />
+                                    Agent Thought Process
+                                </CardTitle>
+                                {isRunning && (
+                                    <Badge variant="outline" className="animate-pulse text-orange-500 border-orange-200 bg-orange-50">
+                                        Live
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-1 overflow-y-auto p-0 bg-slate-50 dark:bg-slate-950">
                     <div className="p-4 space-y-4">
                         {events.length === 0 && (
                             <div className="text-center py-12 text-muted-foreground">
