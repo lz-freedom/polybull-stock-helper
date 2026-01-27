@@ -185,7 +185,7 @@ export default function ChatPage({ params }: ChatPageProps) {
 
     return (
         <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
-            <div className="w-80 border-r bg-muted/10 flex flex-col hidden md:flex">
+            <div className="w-80 border-r bg-muted flex flex-col hidden md:flex">
                 <div className="p-4 border-b">
                     <div className="mb-4">
                         <h2 className="text-lg font-semibold tracking-tight mb-2">Market Analysis</h2>
@@ -250,7 +250,7 @@ export default function ChatPage({ params }: ChatPageProps) {
             <div className="flex-1 flex flex-col min-w-0 bg-background">
                 {currentSessionId ? (
                     <>
-                        <div className="h-14 border-b flex items-center justify-between px-6 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                        <div className="h-14 border-b flex items-center justify-between px-6 bg-background">
                             <div className="flex items-center gap-2">
                                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                                 <span className="font-semibold">

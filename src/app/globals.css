@@ -130,6 +130,10 @@
     --sidebar-accent-foreground: 224 64% 33%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 38 92% 50%;
+
+    /* Marketing dot background (used as element background, not overlay) */
+    --marketing-dots-rgb: 33 33 33;
+    --marketing-dots-bg-rgb: 247 248 250;
   }
 
   /* PolyBull / Stock analytics palette - Dark Mode */
@@ -168,6 +172,10 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 215 28% 17%;
     --sidebar-ring: 38 92% 50%;
+
+    /* Marketing dot background (used as element background, not overlay) */
+    --marketing-dots-rgb: 255 255 255;
+    --marketing-dots-bg-rgb: 15 17 20;
   }
 }
 
