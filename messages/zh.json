@@ -10,6 +10,90 @@
     "prompt4": "最近有哪些影响股市的重大新闻？",
     "disclaimer": "AI 可能会出错。请核实重要信息。投资有风险，入市需谨慎。"
   },
+  "marketing": {
+    "hero": {
+      "badge": "AI Market Copilot",
+      "headlineLeading": "Decode global equities",
+      "headlineHighlight": "before Wall Street moves",
+      "subheading": "PolyBull unifies institutional data, AI signals, and human context so modern desks can see every rotation before it hits the tape.",
+      "primaryCta": "Launch PolyBull",
+      "secondaryCta": "See platform tour"
+    },
+    "stats": {
+      "items": [
+        { "value": "5,800+", "label": "Stocks monitored" },
+        { "value": "$2.3T", "label": "Capital tracked daily" },
+        { "value": "92%", "label": "Signal precision" },
+        { "value": "<90ms", "label": "Data latency" }
+      ]
+    },
+    "ticker": {
+      "title": "Live Signals",
+      "items": [
+        { "symbol": "SPY", "label": "US Momentum", "change": "+1.42%" },
+        { "symbol": "NVDA", "label": "Options Sweep", "change": "+3.58%" },
+        { "symbol": "TSLA", "label": "Short Covering", "change": "+2.11%" },
+        { "symbol": "ASML", "label": "EU Tech Rotation", "change": "-0.84%" },
+        { "symbol": "^N225", "label": "Tokyo Session", "change": "+0.63%" }
+      ]
+    },
+    "trust": {
+      "title": "Trusted by desks at",
+      "partners": ["Atlas Capital", "Northwind Advisors", "Emerald Ridge", "Helios Macro"]
+    },
+    "features": {
+      "title": "Institutional-grade intelligence",
+      "subtitle": "Everything you need to interrogate equities in one terminal.",
+      "items": [
+        { "title": "Predictive Signals", "description": "Proprietary ML surfaces unusual flow, liquidity vacuums, and lead-lag anomalies." },
+        { "title": "Scenario Lab", "description": "Stress portfolios against macro regimes, rate paths, and sector rotations in seconds." },
+        { "title": "Risk Radar", "description": "Live factor exposures, crowding scores, and downside breakpoints for every ticker." },
+        { "title": "Automation Stack", "description": "Route alerts to Slack, Symphony, or OMS when PolyBull spots asymmetric risk." }
+      ]
+    },
+    "live": {
+      "title": "Live intel stream",
+      "insightTitle": "AI Insight",
+      "insightBody": "Financials factor reversing as energy bid accelerates. Watch regional banks for catch-up and fade extended semi strength.",
+      "manualTitle": "Analyst Desk",
+      "manualBody": "Desk notes rotation out of megacap tech into cyclicals after CPI surprise. Monitoring liquidity pockets in airlines and homebuilders.",
+      "eventsTitle": "Recent flow alerts",
+      "events": [
+        { "title": "Options sweep", "description": "NVDA 0DTE call wall triggered at $140 strike." },
+        { "title": "Dark pool print", "description": "$38M block in LLY executes 12 bps above NBBO." },
+        { "title": "Rebalance pulse", "description": "CTAs adding $1.1B exposure to S&P futures into close." }
+      ]
+    },
+    "markets": {
+      "title": "Global market coverage",
+      "subtitle": "PolyBull ingests equity, ETF, and futures data across every major venue.",
+      "regions": [
+        { "name": "Americas", "exchanges": ["NYSE", "NASDAQ", "B3"], "note": "90% US notional tracked" },
+        { "name": "EMEA", "exchanges": ["LSE", "XETRA", "Euronext"], "note": "Cross-asset signals + FX overlay" },
+        { "name": "APAC", "exchanges": ["TSE", "HKEX", "ASX"], "note": "Overnight session heatmaps" }
+      ]
+    },
+    "partners": {
+      "title": "Data & infrastructure",
+      "logos": ["Nasdaq", "NYSE", "Bloomberg", "Refinitiv", "FactSet", "Snowflake"]
+    },
+    "faq": {
+      "title": "Questions, answered",
+      "subtitle": "Everything teams ask before moving to PolyBull.",
+      "items": [
+        { "question": "Where does PolyBull source data?", "answer": "We stream equities, options, and macro feeds from top-tier venues plus proprietary sentiment pipelines." },
+        { "question": "Do you replace the analyst desk?", "answer": "PolyBull augments humans with faster context. Desks keep control over risk and execution." },
+        { "question": "Can we pipe alerts into our workflow?", "answer": "Yes. PolyBull delivers to Slack, Teams, Symphony, Bloomberg IB, and custom webhooks." },
+        { "question": "What compliance safeguards exist?", "answer": "SOC 2 Type II, regional data residency, SSO, audit trails, and fine-grained permissions ship standard." }
+      ]
+    },
+    "cta": {
+      "title": "Ready to see around the next rotation?",
+      "subtitle": "Join funds that move faster with PolyBull's AI market copilot.",
+      "primary": "Start free trial",
+      "secondary": "Talk to our team"
+    }
+  },
   "common": {
     "appName": "iVibeFinance",
     "signIn": "登录",

@@ -59,11 +59,7 @@
 
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  so we've added these styles to maintain v3 behavior.
 */
 @layer base {
   *,
@@ -77,152 +73,162 @@
 
 @layer utilities {
   body {
-    font-family: "Lato", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-fira-sans), "Lato", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .font-data, code, pre {
+    font-family: var(--font-fira-code), monospace;
+  }
+  .scrollbar-hide {
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .mask-edge-soft {
+    mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
   }
 }
 
-/* iVibeFinance Design System - Light Mode */
+/* PolyBull / Stock analytics palette - Light Mode */
 @layer base {
   :root {
-    /* Brand: Hot Pink #ff2882 = 336 100% 58% */
-    --background: 0 0% 99%;
-    --foreground: 0 0% 13%;
+    /* Primary Navy: #1E40AF */
+    --background: 210 40% 98%; /* #F8FAFC */
+    --foreground: 224 64% 33%; /* #1E3A8A */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
+    --card-foreground: 224 64% 33%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
-    --primary: 336 100% 58%;
+    --popover-foreground: 224 64% 33%;
+    --primary: 226 71% 40%; /* #1E40AF */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 13%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 48%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 13%;
+    --secondary: 217 91% 60%; /* #3B82F6 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 224 64% 33%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 336 100% 58%;
-    --chart-1: 167 75% 41%;
-    --chart-2: 349 76% 51%;
-    --chart-3: 199 100% 50%;
-    --chart-4: 253 100% 67%;
-    --chart-5: 336 100% 58%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 38 92% 50%; /* #F59E0B Amber */
+    
+    /* Charts: Teal, Magenta, Amber, Slate, Cyan */
+    --chart-1: 173 80% 40%; /* Teal */
+    --chart-2: 309 83% 60%; /* Magenta */
+    --chart-3: 38 92% 50%; /* Amber */
+    --chart-4: 215 16% 47%; /* Slate */
+    --chart-5: 189 94% 43%; /* Cyan */
+
     --radius: 0.75rem;
-    --sidebar-background: 0 0% 97%;
-    --sidebar-foreground: 0 0% 25%;
-    --sidebar-primary: 336 100% 58%;
+
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 224 64% 33%;
+    --sidebar-primary: 226 71% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 94%;
-    --sidebar-accent-foreground: 0 0% 13%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 336 100% 58%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 224 64% 33%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 38 92% 50%;
   }
 
-  /* iVibeFinance Design System - Dark Mode */
+  /* PolyBull / Stock analytics palette - Dark Mode */
   .dark {
-    --background: 0 0% 6%;
-    --foreground: 0 0% 91%;
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 91%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 91%;
-    --primary: 336 100% 58%;
+    --background: 222 47% 11%; /* #0F172A */
+    --foreground: 210 40% 98%; /* #F8FAFC */
+    --card: 217 33% 17%; /* #1E293B */
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%; /* #3B82F6 Light Blue for contrast */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 91%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 67%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 91%;
+    --secondary: 215 28% 17%; /* Darker slate */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 215 28% 17%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 336 100% 58%;
-    --chart-1: 167 75% 41%;
-    --chart-2: 349 76% 51%;
-    --chart-3: 199 100% 50%;
-    --chart-4: 253 100% 67%;
-    --chart-5: 336 100% 58%;
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 70%;
-    --sidebar-primary: 336 100% 58%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 38 92% 50%; /* Amber */
+    
+    --chart-1: 173 80% 40%;
+    --chart-2: 309 83% 60%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 215 16% 47%;
+    --chart-5: 189 94% 43%;
+
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 91%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 336 100% 58%;
+    --sidebar-accent: 215 28% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 28% 17%;
+    --sidebar-ring: 38 92% 50%;
   }
 }
 
-/*
-  ---break---
+/* 
+   Duplicate definitions for compatibility with tools expecting hsl() wrapper in variables 
+   or direct CSS variable usage without Tailwind @theme HSL transformation 
 */
-
 :root {
-  --background: hsl(0 0% 99%);
-  --foreground: hsl(0 0% 13%);
+  --background: hsl(210 40% 98%);
+  --foreground: hsl(224 64% 33%);
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(0 0% 13%);
+  --card-foreground: hsl(224 64% 33%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(0 0% 13%);
-  --primary: hsl(336 100% 58%);
+  --popover-foreground: hsl(224 64% 33%);
+  --primary: hsl(226 71% 40%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(0 0% 96%);
-  --secondary-foreground: hsl(0 0% 13%);
-  --muted: hsl(0 0% 96%);
-  --muted-foreground: hsl(0 0% 48%);
-  --accent: hsl(0 0% 96%);
-  --accent-foreground: hsl(0 0% 13%);
+  --secondary: hsl(217 91% 60%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(210 40% 96%);
+  --muted-foreground: hsl(215 16% 47%);
+  --accent: hsl(210 40% 96%);
+  --accent-foreground: hsl(224 64% 33%);
   --destructive: hsl(0 84% 60%);
   --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(0 0% 90%);
-  --input: hsl(0 0% 90%);
-  --ring: hsl(336 100% 58%);
-  --chart-1: hsl(167 75% 41%);
-  --chart-2: hsl(349 76% 51%);
-  --chart-3: hsl(199 100% 50%);
-  --chart-4: hsl(253 100% 67%);
-  --chart-5: hsl(336 100% 58%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(38 92% 50%);
+  --chart-1: hsl(173 80% 40%);
+  --chart-2: hsl(309 83% 60%);
+  --chart-3: hsl(38 92% 50%);
+  --chart-4: hsl(215 16% 47%);
+  --chart-5: hsl(189 94% 43%);
   --radius: 0.75rem;
 }
 
-/*
-  ---break---
-*/
-
 .dark {
-  --background: hsl(0 0% 6%);
-  --foreground: hsl(0 0% 91%);
-  --card: hsl(0 0% 10%);
-  --card-foreground: hsl(0 0% 91%);
-  --popover: hsl(0 0% 10%);
-  --popover-foreground: hsl(0 0% 91%);
-  --primary: hsl(336 100% 58%);
+  --background: hsl(222 47% 11%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(217 33% 17%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(217 33% 17%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(217 91% 60%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(0 0% 15%);
-  --secondary-foreground: hsl(0 0% 91%);
-  --muted: hsl(0 0% 15%);
-  --muted-foreground: hsl(0 0% 67%);
-  --accent: hsl(0 0% 15%);
-  --accent-foreground: hsl(0 0% 91%);
+  --secondary: hsl(215 28% 17%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(215 28% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(215 28% 17%);
+  --accent-foreground: hsl(210 40% 98%);
   --destructive: hsl(0 62% 30%);
   --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(0 0% 18%);
-  --input: hsl(0 0% 18%);
-  --ring: hsl(336 100% 58%);
-  --chart-1: hsl(167 75% 41%);
-  --chart-2: hsl(349 76% 51%);
-  --chart-3: hsl(199 100% 50%);
-  --chart-4: hsl(253 100% 67%);
-  --chart-5: hsl(336 100% 58%);
+  --border: hsl(215 28% 17%);
+  --input: hsl(215 28% 17%);
+  --ring: hsl(38 92% 50%);
+  --chart-1: hsl(173 80% 40%);
+  --chart-2: hsl(309 83% 60%);
+  --chart-3: hsl(38 92% 50%);
+  --chart-4: hsl(215 16% 47%);
+  --chart-5: hsl(189 94% 43%);
 }
-
-/*
-  ---break---
-*/
 
 @theme inline {
   --color-background: var(--background);
@@ -255,10 +261,6 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/*
-  ---break---
-*/
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -266,4 +268,40 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-track {
+  animation: ticker-scroll 45s linear infinite;
+}
+
+.group:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none !important;
+  }
+}
+
+@keyframes infinite-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-33.33%);
+  }
+}
+
+.animate-infinite-scroll {
+  animation: infinite-scroll 25s linear infinite;
 }
