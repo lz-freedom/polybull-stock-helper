@@ -3,11 +3,13 @@ import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import Nodemailer from 'next-auth/providers/nodemailer';
+import { createTransport } from 'nodemailer';
 import { db } from '@/lib/db/drizzle';
 import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { comparePasswords } from './session';
 import { ROLES, type Role } from './roles';
+import { renderMagicLinkEmail } from './email-templates';
 
 // 扩展 NextAuth 类型
 declare module 'next-auth' {
@@ -101,6 +103,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     name: 'Magic Link',
                     server: process.env.EMAIL_SERVER,
                     from: process.env.EMAIL_FROM || 'noreply@example.com',
+                    async sendVerificationRequest({ identifier, url, provider }) {
+                        const { subject, html, text } = renderMagicLinkEmail({ url });
+
+                        const transport = createTransport(provider.server);
+                        const result = await transport.sendMail({
+                            to: identifier,
+                            from: provider.from,
+                            subject,
+                            text,
+                            html,
+                        });
+
+                        const failed = result.rejected
+                            .concat(result.pending)
+                            .filter(Boolean);
+                        if (failed.length > 0) {
+                            throw new Error(
+                                `Email(s) (${failed.join(', ')}) could not be sent`,
+                            );
+                        }
+                    },
                 }),
             ]
             : []),
