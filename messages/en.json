@@ -131,7 +131,13 @@
     "dark": "Dark",
     "system": "System",
     "learnMore": "Learn More",
+    "shareWithFriends": "Share Surf with friends",
     "signInOrUp": "Sign In / Sign Up",
+    "upgrade": "Upgrade",
+    "redeemCode": "Redeem Code",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "accountMenu": "Account menu",
     "enterEmail": "Enter your email",
     "continue": "Continue",
     "or": "or",
@@ -158,6 +164,21 @@
     "invalidCredentials": "Invalid email or password. Please try again.",
     "accountCreated": "Account created successfully!",
     "signedOut": "You have been signed out."
+  },
+  "email": {
+    "magicLink": {
+      "subject": "Sign in to iVibeFinance",
+      "title": "Sign in",
+      "body": "Use the button below to sign in. This link will expire soon.",
+      "button": "Sign in to iVibeFinance",
+      "fallback": "If the button doesn't work, copy and paste this link into your browser:",
+      "footer": "If you didn't request this email, you can safely ignore it."
+    },
+    "footer": {
+      "followTitle": "Follow us for updates, tutorials, and community highlights:",
+      "updatesLine": "To help make your experience the best it can be, we’ll send occasional product updates. If you no longer want to receive updates, feel free to {unsubscribe} at any time.",
+      "unsubscribe": "unsubscribe"
+    }
   },
   "dashboard": {
     "title": "Dashboard",

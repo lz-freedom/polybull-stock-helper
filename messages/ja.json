@@ -131,7 +131,13 @@
     "dark": "ダーク",
     "system": "システム",
     "learnMore": "詳細を見る",
+    "shareWithFriends": "友だちと Surf を共有",
     "signInOrUp": "ログイン / 登録",
+    "upgrade": "アップグレード",
+    "redeemCode": "引き換えコード",
+    "settings": "設定",
+    "signOut": "ログアウト",
+    "accountMenu": "アカウントメニュー",
     "enterEmail": "メールアドレスを入力",
     "continue": "続ける",
     "or": "または",
@@ -158,6 +164,21 @@
     "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
     "accountCreated": "アカウントが作成されました！",
     "signedOut": "ログアウトしました。"
+  },
+  "email": {
+    "magicLink": {
+      "subject": "iVibeFinance にサインイン",
+      "title": "サインイン",
+      "body": "下のボタンからサインインしてください。このリンクはまもなく無効になります。",
+      "button": "iVibeFinance にサインイン",
+      "fallback": "ボタンが動作しない場合は、次のリンクをコピーしてブラウザで開いてください：",
+      "footer": "このメールに心当たりがない場合は、破棄してください。"
+    },
+    "footer": {
+      "followTitle": "最新情報、チュートリアル、コミュニティのハイライトはこちら：",
+      "updatesLine": "より良い体験のため、不定期で製品アップデートをお送りします。配信を希望しない場合は、いつでも {unsubscribe} できます。",
+      "unsubscribe": "配信停止"
+    }
   },
   "dashboard": {
     "title": "ダッシュボード",

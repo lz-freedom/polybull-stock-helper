@@ -131,7 +131,13 @@
     "dark": "深色",
     "system": "跟随系统",
     "learnMore": "了解更多",
+    "shareWithFriends": "与朋友分享 Surf",
     "signInOrUp": "注册 / 登录",
+    "upgrade": "升级",
+    "redeemCode": "兑换码",
+    "settings": "设置",
+    "signOut": "退出登录",
+    "accountMenu": "账户菜单",
     "enterEmail": "请输入邮箱地址",
     "continue": "继续",
     "or": "或",
@@ -158,6 +164,21 @@
     "invalidCredentials": "邮箱或密码错误，请重试。",
     "accountCreated": "账户创建成功！",
     "signedOut": "您已成功退出登录。"
+  },
+  "email": {
+    "magicLink": {
+      "subject": "登录 iVibeFinance",
+      "title": "登录",
+      "body": "请点击下方按钮完成登录。该链接将在短时间后失效。",
+      "button": "登录 iVibeFinance",
+      "fallback": "如果按钮无法使用，请复制并在浏览器中打开以下链接：",
+      "footer": "如果这不是你本人操作，请忽略本邮件。"
+    },
+    "footer": {
+      "followTitle": "关注我们，获取最新动态、教程与社区精选：",
+      "updatesLine": "为了给你提供更好的体验，我们会不定期发送产品更新与相关资讯。如不希望接收这些邮件，可随时 {unsubscribe}。",
+      "unsubscribe": "退订"
+    }
   },
   "dashboard": {
     "title": "控制台",
