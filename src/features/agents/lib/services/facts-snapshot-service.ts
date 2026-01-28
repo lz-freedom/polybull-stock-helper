@@ -19,17 +19,28 @@ export interface FastFinanceRequest {
 }
 
 export interface FastFinanceResponse {
-    Info?: Record<string, unknown>;
-    AnnualIncomeStatement?: Record<string, unknown>[];
-    QuarterlyIncomeStatement?: Record<string, unknown>[];
-    AnnualBalanceSheet?: Record<string, unknown>[];
-    QuarterlyBalanceSheet?: Record<string, unknown>[];
-    AnnualCashFlow?: Record<string, unknown>[];
-    QuarterlyCashFlow?: Record<string, unknown>[];
-    News?: Record<string, unknown>[];
-    StockSplits?: Record<string, unknown>[];
-    Dividends?: Record<string, unknown>[];
-    NameTranslation?: Record<string, unknown>;
+    info?: Record<string, unknown>;
+    income_yearly_yefinancials?: Record<string, unknown>[];
+    income_quarterly_yefinancials?: Record<string, unknown>[];
+    balance_yearly_yefinancials?: Record<string, unknown>[];
+    balance_quarterly_yefinancials?: Record<string, unknown>[];
+    cashflow_yearly_yefinancials?: Record<string, unknown>[];
+    cashflow_quarterly_yefinancials?: Record<string, unknown>[];
+    news?: Record<string, unknown>[];
+    splits?: Record<string, unknown>[];
+    dividends?: Record<string, unknown>[];
+    name_and_new_translations?: Record<string, unknown>;
+    Info?: any;
+    AnnualIncomeStatement?: any[];
+    QuarterlyIncomeStatement?: any[];
+    AnnualBalanceSheet?: any[];
+    QuarterlyBalanceSheet?: any[];
+    AnnualCashFlow?: any[];
+    QuarterlyCashFlow?: any[];
+    News?: any[];
+    StockSplits?: any[];
+    Dividends?: any[];
+    NameTranslation?: any;
     [key: string]: unknown;
 }
 
@@ -156,7 +167,7 @@ export function extractStockInfo(snapshot: FactsSnapshot): {
     currency?: string;
 } {
     const data = snapshot.data as FastFinanceResponse;
-    const info = data.Info ?? {};
+    const info = data.info ?? data.Info ?? {};
 
     return {
         symbol: snapshot.stockSymbol,
@@ -180,10 +191,22 @@ export function extractLatestFinancials(snapshot: FactsSnapshot): {
 } {
     const data = snapshot.data as FastFinanceResponse;
 
-    const latestAnnualIncome = data.AnnualIncomeStatement?.[0] ?? {};
-    const latestQuarterlyIncome = data.QuarterlyIncomeStatement?.[0] ?? {};
-    const latestAnnualBalance = data.AnnualBalanceSheet?.[0] ?? {};
-    const latestAnnualCashFlow = data.AnnualCashFlow?.[0] ?? {};
+    const latestAnnualIncome =
+        data.income_yearly_yefinancials?.[0] ??
+        data.AnnualIncomeStatement?.[0] ??
+        {};
+    const latestQuarterlyIncome =
+        data.income_quarterly_yefinancials?.[0] ??
+        data.QuarterlyIncomeStatement?.[0] ??
+        {};
+    const latestAnnualBalance =
+        data.balance_yearly_yefinancials?.[0] ??
+        data.AnnualBalanceSheet?.[0] ??
+        {};
+    const latestAnnualCashFlow =
+        data.cashflow_yearly_yefinancials?.[0] ??
+        data.AnnualCashFlow?.[0] ??
+        {};
 
     return {
         annualRevenue: latestAnnualIncome.TotalRevenue as number | undefined,
@@ -210,7 +233,7 @@ export function extractRecentNews(
     publishedAt?: string;
 }> {
     const data = snapshot.data as FastFinanceResponse;
-    const news = data.News ?? [];
+    const news = data.news ?? data.News ?? [];
 
     return news.slice(0, limit).map((item) => ({
         title: item.title as string | undefined,
