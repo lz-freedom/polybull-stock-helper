@@ -19,7 +19,61 @@ export interface FastFinanceRequest {
 }
 
 export interface FastFinanceResponse {
-    info?: Record<string, unknown>;
+    info?: {
+        symbol?: string;
+        exchange?: string;
+        quoteType?: string;
+        shortName?: string;
+        longName?: string;
+        sector?: string;
+        industry?: string;
+        currency?: string;
+        financialCurrency?: string;
+        
+        // Price
+        currentPrice?: number;
+        regularMarketPrice?: number;
+        previousClose?: number;
+        open?: number;
+        dayLow?: number;
+        dayHigh?: number;
+        fiftyTwoWeekLow?: number;
+        fiftyTwoWeekHigh?: number;
+        
+        // Valuation
+        marketCap?: number;
+        trailingPE?: number;
+        forwardPE?: number;
+        priceToBook?: number;
+        priceToSalesTrailing12Months?: number;
+        enterpriseToRevenue?: number;
+        enterpriseToEbitda?: number;
+        pegRatio?: number;
+
+        // Margins & Returns
+        returnOnAssets?: number;
+        returnOnEquity?: number;
+        grossMargins?: number;
+        operatingMargins?: number;
+        profitMargins?: number;
+        
+        // Growth & Cash
+        totalRevenue?: number;
+        revenueGrowth?: number;
+        earningsGrowth?: number;
+        freeCashflow?: number;
+        totalCash?: number;
+        totalDebt?: number;
+        debtToEquity?: number;
+        
+        // Dividends
+        dividendYield?: number;
+        fiveYearAvgDividendYield?: number;
+        payoutRatio?: number;
+
+        [key: string]: unknown;
+    };
+    
     income_yearly_yefinancials?: Record<string, unknown>[];
     income_quarterly_yefinancials?: Record<string, unknown>[];
     balance_yearly_yefinancials?: Record<string, unknown>[];
@@ -30,6 +84,8 @@ export interface FastFinanceResponse {
     splits?: Record<string, unknown>[];
     dividends?: Record<string, unknown>[];
     name_and_new_translations?: Record<string, unknown>;
+    
+    // Legacy / Fallback
     Info?: any;
     AnnualIncomeStatement?: any[];
     QuarterlyIncomeStatement?: any[];
@@ -157,26 +213,48 @@ export async function getOrFetchSnapshot(
     return createSnapshot(stockSymbol, exchangeAcronym, data, expiresAt);
 }
 
-export function extractStockInfo(snapshot: FactsSnapshot): {
-    symbol: string;
-    exchange: string;
-    name?: string;
-    sector?: string;
-    industry?: string;
-    marketCap?: number;
-    currency?: string;
-} {
+export function extractStockInfo(snapshot: FactsSnapshot) {
     const data = snapshot.data as FastFinanceResponse;
     const info = data.info ?? data.Info ?? {};
 
     return {
         symbol: snapshot.stockSymbol,
         exchange: snapshot.exchangeAcronym,
-        name: info.longName as string | undefined,
+        name: (info.longName ?? info.shortName) as string | undefined,
         sector: info.sector as string | undefined,
         industry: info.industry as string | undefined,
         marketCap: info.marketCap as number | undefined,
         currency: info.currency as string | undefined,
+        
+        // Price
+        currentPrice: (info.currentPrice ?? info.regularMarketPrice) as number | undefined,
+        previousClose: info.previousClose as number | undefined,
+        open: info.open as number | undefined,
+        dayLow: info.dayLow as number | undefined,
+        dayHigh: info.dayHigh as number | undefined,
+        fiftyTwoWeekLow: info.fiftyTwoWeekLow as number | undefined,
+        fiftyTwoWeekHigh: info.fiftyTwoWeekHigh as number | undefined,
+        
+        // Valuation
+        trailingPE: info.trailingPE as number | undefined,
+        forwardPE: info.forwardPE as number | undefined,
+        priceToBook: info.priceToBook as number | undefined,
+        priceToSales: info.priceToSalesTrailing12Months as number | undefined,
+        pegRatio: info.pegRatio as number | undefined,
+        
+        // Quality
+        returnOnEquity: info.returnOnEquity as number | undefined,
+        returnOnAssets: info.returnOnAssets as number | undefined,
+        grossMargins: info.grossMargins as number | undefined,
+        operatingMargins: info.operatingMargins as number | undefined,
+        profitMargins: info.profitMargins as number | undefined,
+        
+        // Growth
+        revenueGrowth: info.revenueGrowth as number | undefined,
+        earningsGrowth: info.earningsGrowth as number | undefined,
+        
+        // Dividend
+        dividendYield: info.dividendYield as number | undefined,
     };
 }
 
@@ -209,17 +287,13 @@ export function extractLatestFinancials(snapshot: FactsSnapshot): {
         {};
 
     return {
-        annualRevenue: latestAnnualIncome.TotalRevenue as number | undefined,
-        quarterlyRevenue: latestQuarterlyIncome.TotalRevenue as
-            | number
-            | undefined,
-        annualNetIncome: latestAnnualIncome.NetIncome as number | undefined,
-        quarterlyNetIncome: latestQuarterlyIncome.NetIncome as
-            | number
-            | undefined,
-        totalAssets: latestAnnualBalance.TotalAssets as number | undefined,
-        totalDebt: latestAnnualBalance.TotalDebt as number | undefined,
-        freeCashFlow: latestAnnualCashFlow.FreeCashFlow as number | undefined,
+        annualRevenue: (latestAnnualIncome.totalRevenue ?? latestAnnualIncome.TotalRevenue) as number | undefined,
+        quarterlyRevenue: (latestQuarterlyIncome.totalRevenue ?? latestQuarterlyIncome.TotalRevenue) as number | undefined,
+        annualNetIncome: (latestAnnualIncome.netIncome ?? latestAnnualIncome.NetIncome) as number | undefined,
+        quarterlyNetIncome: (latestQuarterlyIncome.netIncome ?? latestQuarterlyIncome.NetIncome) as number | undefined,
+        totalAssets: (latestAnnualBalance.totalAssets ?? latestAnnualBalance.TotalAssets) as number | undefined,
+        totalDebt: (latestAnnualBalance.totalDebt ?? latestAnnualBalance.TotalDebt) as number | undefined,
+        freeCashFlow: (latestAnnualCashFlow.freeCashFlow ?? latestAnnualCashFlow.FreeCashFlow) as number | undefined,
     };
 }
 
@@ -239,6 +313,6 @@ export function extractRecentNews(
         title: item.title as string | undefined,
         link: item.link as string | undefined,
         publisher: item.publisher as string | undefined,
-        publishedAt: item.providerPublishTime as string | undefined,
+        publishedAt: (item.providerPublishTime ?? item.publishedAt) as string | undefined,
     }));
 }

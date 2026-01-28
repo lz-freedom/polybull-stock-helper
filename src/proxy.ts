@@ -18,6 +18,7 @@ const publicPaths = [
     '/auth',
     '/sign-in',
     '/sign-up',
+    '/share',
 ];
 
 export async function proxy(request: NextRequest) {

@@ -37,59 +37,84 @@ function buildAnalysisPrompt(snapshot: FactsSnapshot): string {
     const financials = extractLatestFinancials(snapshot);
     const news = extractRecentNews(snapshot, 5);
 
-    return `Analyze the following stock data and provide your investment stance.
+    return `分析以下股票数据并提供你的投资观点。请用中文回复。
 
-## Stock Information
-- Symbol: ${stockInfo.symbol}
-- Exchange: ${stockInfo.exchange}
-- Name: ${stockInfo.name ?? 'N/A'}
-- Sector: ${stockInfo.sector ?? 'N/A'}
-- Industry: ${stockInfo.industry ?? 'N/A'}
-- Market Cap: ${stockInfo.marketCap ? `$${(stockInfo.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
+## 股票信息
+- 代码: ${stockInfo.symbol}
+- 交易所: ${stockInfo.exchange}
+- 名称: ${stockInfo.name ?? 'N/A'}
+- 行业: ${stockInfo.sector ?? 'N/A'}
+- 细分行业: ${stockInfo.industry ?? 'N/A'}
+- 市值: ${stockInfo.marketCap ? `$${(stockInfo.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
 
-## Latest Financials
-- Annual Revenue: ${financials.annualRevenue ? `$${(financials.annualRevenue / 1e9).toFixed(2)}B` : 'N/A'}
-- Quarterly Revenue: ${financials.quarterlyRevenue ? `$${(financials.quarterlyRevenue / 1e9).toFixed(2)}B` : 'N/A'}
-- Annual Net Income: ${financials.annualNetIncome ? `$${(financials.annualNetIncome / 1e9).toFixed(2)}B` : 'N/A'}
-- Total Assets: ${financials.totalAssets ? `$${(financials.totalAssets / 1e9).toFixed(2)}B` : 'N/A'}
-- Total Debt: ${financials.totalDebt ? `$${(financials.totalDebt / 1e9).toFixed(2)}B` : 'N/A'}
-- Free Cash Flow: ${financials.freeCashFlow ? `$${(financials.freeCashFlow / 1e9).toFixed(2)}B` : 'N/A'}
+## 最新财务数据
+- 年收入: ${financials.annualRevenue ? `$${(financials.annualRevenue / 1e9).toFixed(2)}B` : 'N/A'}
+- 季度收入: ${financials.quarterlyRevenue ? `$${(financials.quarterlyRevenue / 1e9).toFixed(2)}B` : 'N/A'}
+- 年净利润: ${financials.annualNetIncome ? `$${(financials.annualNetIncome / 1e9).toFixed(2)}B` : 'N/A'}
+- 总资产: ${financials.totalAssets ? `$${(financials.totalAssets / 1e9).toFixed(2)}B` : 'N/A'}
+- 总负债: ${financials.totalDebt ? `$${(financials.totalDebt / 1e9).toFixed(2)}B` : 'N/A'}
+- 自由现金流: ${financials.freeCashFlow ? `$${(financials.freeCashFlow / 1e9).toFixed(2)}B` : 'N/A'}
 
-## Recent News Headlines
-${news.map((n, i) => `${i + 1}. ${n.title ?? 'No title'} (${n.publisher ?? 'Unknown'})`).join('\n')}
+## 近期新闻
+${news.map((n, i) => `${i + 1}. ${n.title ?? '无标题'} (${n.publisher ?? '未知来源'})`).join('\n')}
 
-Provide a comprehensive analysis with your investment stance (bullish/bearish/neutral), key supporting points, identified risks, and confidence level.`;
+请按以下9个板块进行全面分析：
+
+1. **核心概览**: 一句话总结公司核心业务与投资价值
+2. **商业模式**: 如何赚钱、收入构成、客户画像
+3. **竞争优势**: 护城河分析、市场地位、核心壁垒
+4. **财务质量**: 盈利能力、资产负债、现金流健康度
+5. **管理层治理**: 管理层背景、公司治理、股权激励
+6. **估值分析**: 估值方法、安全边际、同业对比
+7. **未来展望**: 成长空间、战略规划、行业趋势
+8. **风险提示**: 经营风险、行业风险、财务风险
+9. **投资结论**: 综合评价、投资建议、合理估值区间
+
+最后给出你的投资观点(看多/看空/中性)、关键支撑论点、识别的风险和置信度。`;
 }
 
-const ANALYSIS_SYSTEM_PROMPT = `You are a professional financial analyst. Analyze the provided stock data objectively.
-Consider fundamentals, recent news sentiment, and market conditions.
-Be specific and data-driven in your analysis. Avoid generic statements.`;
+const ANALYSIS_SYSTEM_PROMPT = `你是一位专业的金融分析师。请客观分析提供的股票数据。
+综合考虑基本面、近期新闻情绪和市场状况。
+分析要具体、数据驱动，避免泛泛而谈。
+请用中文回复。`;
 
 function buildSynthesisPrompt(analyses: ModelAnalysis[]): string {
     const analysisTexts = analyses
         .map(
-            (a) => `## ${a.modelId} Analysis
-- Stance: ${a.stance} (Confidence: ${a.confidence}%)
-- Summary: ${a.stanceSummary}
-- Key Points: ${a.keyPoints.join('; ')}
-- Risks: ${a.risks.join('; ')}`,
+            (a) => `## ${a.modelId} 分析
+- 观点: ${a.stance} (置信度: ${a.confidence}%)
+- 摘要: ${a.stanceSummary}
+- 关键论点: ${a.keyPoints.join('; ')}
+- 风险: ${a.risks.join('; ')}`,
         )
         .join('\n\n');
 
-    return `You have received analyses from multiple AI models. Synthesize them into a consensus report.
+    return `你已收到多个AI模型的分析。请综合这些分析形成共识报告。
 
 ${analysisTexts}
 
-Identify:
-1. Points where all models agree (consensus)
-2. Points where models disagree (divergence)
-3. Action items that need further verification
-4. Overall stance based on the weight of evidence`;
+请识别：
+1. 所有模型一致同意的观点（共识）
+2. 模型之间存在分歧的观点（分歧）
+3. 需要进一步验证的事项
+4. 基于证据权重的整体投资观点
+
+## 评分指南
+请对以下维度进行1-10分评分：
+- 盈利能力
+- 成长性
+- 财务健康度
+- 估值吸引力
+- 竞争优势
+- 管理层质量
+
+最后给出综合评分(1-10)和投资建议(强烈买入/买入/持有/卖出/强烈卖出)。`;
 }
 
-const SYNTHESIS_SYSTEM_PROMPT = `You are a senior investment analyst synthesizing multiple perspectives.
-Identify genuine consensus vs apparent agreement. Highlight meaningful disagreements.
-Be objective and highlight uncertainty where it exists.`;
+const SYNTHESIS_SYSTEM_PROMPT = `你是一位高级投资分析师，负责综合多方观点。
+识别真正的共识与表面一致。突出有意义的分歧。
+保持客观，在存在不确定性的地方明确指出。
+请用中文回复。`;
 
 // Export prompt builders/constants for Mastra workflows (no behavior change).
 export const CONSENSUS_ANALYSIS_MODELS = ANALYSIS_MODELS;

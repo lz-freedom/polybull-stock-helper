@@ -234,11 +234,22 @@ export const researchWorkflow = createWorkflow({
                     status: AGENT_STEP_STATUS.RUNNING,
                 });
 
+                // 发送思考事件：开始制定研究策略
+                await emit(
+                    requestContext,
+                    createEvent('thinking', {
+                        message: 'Formulating research strategy...',
+                    }),
+                );
+
                 const planningPrompt = buildResearchPlanningPrompt(init.query, snapshot);
+                // 生成研究计划，配置超时和重试策略
                 const plan = await generateStructuredOutput(ResearchPlanSchema, planningPrompt, {
                     modelId: MODELS.DEFAULT,
                     system: 'You are a research planner. Create focused, answerable research tasks.',
                     temperature: 0.5,
+                    timeout: 600000,
+                    maxRetries: 3,
                 });
 
                 await updateAgentRunStepStatus({
@@ -321,6 +332,14 @@ export const researchWorkflow = createWorkflow({
                     const task = tasks[i];
                     const step = createdSteps[i];
 
+                    // 发送思考事件：开始研究当前任务
+                    await emit(
+                        requestContext,
+                        createEvent('thinking', {
+                            message: `Researching: ${task.question}`,
+                        }),
+                    );
+
                     await emit(
                         requestContext,
                         createEvent('progress', {
@@ -334,9 +353,12 @@ export const researchWorkflow = createWorkflow({
 
                     try {
                         const prompt = buildResearchTaskPrompt(task, snapshot);
+                        // 执行研究任务，配置超时和重试策略
                         const finding = await generateStructuredOutput(ResearchFindingSchema, prompt, {
                             modelId: MODELS.DEFAULT,
                             temperature: 0.7,
+                            timeout: 600000,
+                            maxRetries: 3,
                         });
 
                         findings.push(finding);
@@ -387,8 +409,10 @@ export const researchWorkflow = createWorkflow({
                     }
                 }
 
-                if (findings.length === 0) {
-                    throw new Error('All research tasks failed');
+                // 弹性检查：计算成功率，低于50%则抛出错误
+                const successRate = findings.length / tasks.length;
+                if (successRate < 0.5) {
+                    throw new Error(`Research task success rate too low: ${(successRate * 100).toFixed(1)}% (need at least 50%)`);
                 }
 
                 await setState({ ...state, findings });
@@ -436,11 +460,22 @@ export const researchWorkflow = createWorkflow({
 
                 await updateAgentRunStepStatus({ stepDbId: synthesisStep.id, status: AGENT_STEP_STATUS.RUNNING });
 
+                // 发送思考事件：开始汇总研究发现
+                await emit(
+                    requestContext,
+                    createEvent('thinking', {
+                        message: 'Compiling research findings...',
+                    }),
+                );
+
                 const synthesisPrompt = buildResearchSynthesisPrompt(init.query, plan, findings);
+                // 生成最终研究报告，配置超时和重试策略
                 const report = await generateStructuredOutput(ResearchReportSchema, synthesisPrompt, {
                     modelId: MODELS.DEFAULT,
                     system: 'You are a senior research analyst. Create comprehensive, well-structured reports.',
                     temperature: 0.5,
+                    timeout: 600000,
+                    maxRetries: 3,
                 });
 
                 await updateAgentRunStepStatus({

@@ -175,74 +175,118 @@ export const ResearchReportSchema = z.object({
 export type ResearchReport = z.infer<typeof ResearchReportSchema>;
 
 // ============================================================
-// Streamable Report Blocks
+// Streamable Report Blocks (Unified)
 // ============================================================
 
-export const TocBlockSchema = z.object({
+export const ReportBlockType = z.enum([
+    'toc',
+    'markdown',
+    'kpi-row',
+    'table',
+    'chart',
+    'callout',
+    'score-panel',
+    'analyst-panel'
+]);
+
+const BlockBase = z.object({
+    id: z.string(),
+    title: z.string().optional(),
+});
+
+export const TocBlockSchema = BlockBase.extend({
+    type: z.literal('toc'),
     sections: z.array(
         z.object({
             id: z.string(),
             title: z.string(),
+            level: z.number().optional(),
             active: z.boolean().optional(),
         }),
     ),
 });
 export type TocBlock = z.infer<typeof TocBlockSchema>;
 
-export const KpiRowBlockSchema = z.object({
-    items: z.array(
-        z.object({
-            label: z.string(),
-            value: z.string(),
-            trend: z.string().optional(),
-            status: z.string().optional(),
-        }),
-    ),
+export const MarkdownBlockSchema = BlockBase.extend({
+    type: z.literal('markdown'),
+    content: z.string(),
+});
+export type MarkdownBlock = z.infer<typeof MarkdownBlockSchema>;
+
+export const KpiItemSchema = z.object({
+    label: z.string(),
+    value: z.string(),
+    change: z.string().optional(),
+    trend: z.enum(['up', 'down', 'neutral']).optional(),
+    status: z.enum(['success', 'warning', 'error', 'neutral']).optional(),
+});
+export type KpiItem = z.infer<typeof KpiItemSchema>;
+
+export const KpiRowBlockSchema = BlockBase.extend({
+    type: z.literal('kpi-row'),
+    items: z.array(KpiItemSchema),
 });
 export type KpiRowBlock = z.infer<typeof KpiRowBlockSchema>;
 
-export const TableBlockSchema = z.object({
-    title: z.string(),
+export const TableBlockSchema = BlockBase.extend({
+    type: z.literal('table'),
     columns: z.array(z.string()),
-    rows: z.array(z.array(z.string())),
+    rows: z.array(z.record(z.string(), z.string().or(z.number()))),
 });
 export type TableBlock = z.infer<typeof TableBlockSchema>;
 
-export const ChartBlockSchema = z.object({
-    type: z.enum(['line', 'bar']),
-    title: z.string(),
+export const ChartBlockSchema = BlockBase.extend({
+    type: z.literal('chart'),
+    chartType: z.enum(['line', 'bar', 'area', 'composed', 'pie']),
     data: z.array(z.record(z.any())),
-    config: z.record(z.any()).optional(),
+    config: z.record(z.object({
+        label: z.string().optional(),
+        color: z.string().optional(),
+    })).optional(),
+    xAxisKey: z.string(),
+    series: z.array(z.object({
+        dataKey: z.string(),
+        type: z.enum(['line', 'bar', 'area']).optional(),
+        color: z.string().optional(),
+        name: z.string().optional(),
+        stackId: z.string().optional(),
+    })),
 });
 export type ChartBlock = z.infer<typeof ChartBlockSchema>;
 
-export const CalloutBlockSchema = z.object({
-    type: z.enum(['info', 'warning', 'success']),
+export const CalloutBlockSchema = BlockBase.extend({
+    type: z.literal('callout'),
+    intent: z.enum(['info', 'warning', 'success', 'danger', 'neutral']),
     content: z.string(),
 });
 export type CalloutBlock = z.infer<typeof CalloutBlockSchema>;
 
-export const ScorePanelBlockSchema = z.object({
-    overallScore: z.number().min(1).max(10),
-    stance: StanceSchema,
-    dimensions: z.array(DimensionScoreSchema),
-    modelScores: z.array(
-        z.object({
-            modelId: z.string(),
-            score: z.number().min(1).max(10),
-            stance: StanceSchema,
-        }),
-    ),
+export const ScorePanelBlockSchema = BlockBase.extend({
+    type: z.literal('score-panel'),
+    score: ScoreSchema,
 });
 export type ScorePanelBlock = z.infer<typeof ScorePanelBlockSchema>;
 
-export const ReportBlockSchema = z.union([
+export const AnalystPanelBlockSchema = BlockBase.extend({
+    type: z.literal('analyst-panel'),
+    analysts: z.array(z.object({
+        name: z.string(),
+        role: ResearchRoleEnum,
+        avatar: z.string().optional(),
+        analysis: ModelAnalysisSchema.optional(),
+    })),
+});
+export type AnalystPanelBlock = z.infer<typeof AnalystPanelBlockSchema>;
+
+export const ReportBlockSchema = z.discriminatedUnion('type', [
     TocBlockSchema,
+    MarkdownBlockSchema,
     KpiRowBlockSchema,
     TableBlockSchema,
     ChartBlockSchema,
     CalloutBlockSchema,
     ScorePanelBlockSchema,
+    AnalystPanelBlockSchema,
 ]);
 export type ReportBlock = z.infer<typeof ReportBlockSchema>;
 

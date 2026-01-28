@@ -123,6 +123,17 @@ export const CompleteEventSchema = z.object({
 export type CompleteEvent = z.infer<typeof CompleteEventSchema>;
 
 /**
+ * 思考事件 - 展示当前正在进行的思考/分析
+ */
+export const ThinkingEventSchema = z.object({
+    type: z.literal('thinking'),
+    message: z.string(),
+    timestamp: z.number(),
+});
+
+export type ThinkingEvent = z.infer<typeof ThinkingEventSchema>;
+
+/**
  * 统一事件类型
  */
 export const WorkflowEventSchema = z.discriminatedUnion('type', [
@@ -135,6 +146,7 @@ export const WorkflowEventSchema = z.discriminatedUnion('type', [
     ToolResultEventSchema,
     ErrorEventSchema,
     CompleteEventSchema,
+    ThinkingEventSchema,
 ]);
 
 export type WorkflowEvent = z.infer<typeof WorkflowEventSchema>;

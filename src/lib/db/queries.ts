@@ -7,6 +7,7 @@ import { verifyToken } from '@features/auth/lib/session';
 export async function getUser() {
     const sessionCookie = (await cookies()).get('session');
     if (!sessionCookie || !sessionCookie.value) {
+        console.log('getUser: No session cookie');
         return null;
     }
 
@@ -16,10 +17,12 @@ export async function getUser() {
     !sessionData.user ||
     typeof sessionData.user.id !== 'number'
     ) {
+        console.log('getUser: Invalid session data');
         return null;
     }
 
     if (new Date(sessionData.expires) < new Date()) {
+        console.log('getUser: Session expired');
         return null;
     }
 
@@ -30,6 +33,7 @@ export async function getUser() {
         .limit(1);
 
     if (user.length === 0) {
+        console.log('getUser: User not found in DB', sessionData.user.id);
         return null;
     }
 

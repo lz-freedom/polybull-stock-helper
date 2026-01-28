@@ -20,6 +20,8 @@ import {
     type ResearchFinding,
     type ResearchReport,
     type ResearchTask,
+    type ResearchRole,
+    type ReportSection,
 } from '../schemas';
 import {
     getOrFetchSnapshot,
@@ -29,27 +31,82 @@ import {
     type FastFinanceResponse,
 } from '../services/facts-snapshot-service';
 
-const RESEARCH_ROLES = [
+interface ResearchRoleConfig {
+    role: ResearchRole;
+    name_zh: string;
+    description: string;
+    sections: ReportSection[];
+    requiredData: string[];
+}
+
+const RESEARCH_ROLES: ResearchRoleConfig[] = [
     {
         role: 'fundamental_analyst',
-        description: 'Focus on financial statements, ratios, and valuation metrics',
+        name_zh: '基本面分析师',
+        description: '负责公司核心价值与商业模式分析，从整体视角评估公司基本面',
+        sections: ['core_overview', 'business_model'],
+        requiredData: ['companyInfo', 'incomeStatement', 'news'],
     },
     {
-        role: 'technical_analyst',
-        description: 'Focus on price patterns, momentum, and market trends',
+        role: 'financial_analyst',
+        name_zh: '财务分析师',
+        description: '专注财务报表分析，评估盈利能力、资产质量和现金流健康度',
+        sections: ['financial_quality'],
+        requiredData: ['incomeStatement', 'balanceSheet', 'cashFlowStatement'],
+    },
+    {
+        role: 'valuation_analyst',
+        name_zh: '估值分析师',
+        description: '运用多种估值方法评估公司合理价值，计算安全边际',
+        sections: ['valuation'],
+        requiredData: ['companyInfo', 'incomeStatement', 'marketData'],
     },
     {
         role: 'industry_expert',
-        description: 'Focus on competitive positioning and industry dynamics',
+        name_zh: '行业专家',
+        description: '分析行业竞争格局，评估公司护城河与市场地位',
+        sections: ['competitive_advantage'],
+        requiredData: ['companyInfo', 'news', 'industryData'],
+    },
+    {
+        role: 'governance_analyst',
+        name_zh: '公司治理分析师',
+        description: '评估管理层能力、治理结构和股权激励机制',
+        sections: ['governance'],
+        requiredData: ['companyInfo', 'insiderTransactions', 'shareholderStructure'],
+    },
+    {
+        role: 'strategy_analyst',
+        name_zh: '战略分析师',
+        description: '分析公司战略方向、增长空间和行业发展趋势',
+        sections: ['future_outlook'],
+        requiredData: ['companyInfo', 'news', 'earningsCall'],
     },
     {
         role: 'risk_analyst',
-        description: 'Focus on risks, threats, and downside scenarios',
+        name_zh: '风险分析师',
+        description: '识别和评估各类风险，包括经营风险、财务风险和行业风险',
+        sections: ['risks'],
+        requiredData: ['balanceSheet', 'news', 'legalFilings'],
+    },
+    {
+        role: 'data_engineer',
+        name_zh: '数据工程师',
+        description: '负责数据提取、清洗和预处理，为其他分析师提供数据支持',
+        sections: [],
+        requiredData: ['all'],
     },
 ];
 
-// Export prompt builders/constants for Mastra workflows (no behavior change).
 export const RESEARCH_ROLE_DEFINITIONS = RESEARCH_ROLES;
+
+export function getRoleConfig(role: ResearchRole): ResearchRoleConfig | undefined {
+    return RESEARCH_ROLES.find(r => r.role === role);
+}
+
+export function getRolesForSection(section: ReportSection): ResearchRoleConfig[] {
+    return RESEARCH_ROLES.filter(r => r.sections.includes(section));
+}
 export const buildResearchPlanningPrompt = buildPlanningPrompt;
 export const buildResearchTaskPrompt = buildResearchPrompt;
 export const buildResearchSynthesisPrompt = buildSynthesisPrompt;
@@ -78,39 +135,53 @@ function buildResearchPrompt(
     const financials = extractLatestFinancials(snapshot);
     const news = extractRecentNews(snapshot, 10);
     const data = snapshot.data as FastFinanceResponse;
+    
+    const roleConfig = getRoleConfig(task.role);
+    const roleNameZh = roleConfig?.name_zh ?? task.role;
+    const roleDescription = roleConfig?.description ?? '';
+    const responsibleSections = roleConfig?.sections ?? [];
 
-    let dataContext = `## Stock: ${stockInfo.symbol} - ${stockInfo.name ?? 'N/A'}
-Sector: ${stockInfo.sector ?? 'N/A'} | Industry: ${stockInfo.industry ?? 'N/A'}
-Market Cap: ${stockInfo.marketCap ? `$${(stockInfo.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
+    let dataContext = `## 股票: ${stockInfo.symbol} - ${stockInfo.name ?? 'N/A'}
+行业: ${stockInfo.sector ?? 'N/A'} | 细分行业: ${stockInfo.industry ?? 'N/A'}
+市值: ${stockInfo.marketCap ? `$${(stockInfo.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
 
-## Financial Highlights
-- Annual Revenue: ${financials.annualRevenue ? `$${(financials.annualRevenue / 1e9).toFixed(2)}B` : 'N/A'}
-- Net Income: ${financials.annualNetIncome ? `$${(financials.annualNetIncome / 1e9).toFixed(2)}B` : 'N/A'}
-- Total Assets: ${financials.totalAssets ? `$${(financials.totalAssets / 1e9).toFixed(2)}B` : 'N/A'}
-- Total Debt: ${financials.totalDebt ? `$${(financials.totalDebt / 1e9).toFixed(2)}B` : 'N/A'}
-- Free Cash Flow: ${financials.freeCashFlow ? `$${(financials.freeCashFlow / 1e9).toFixed(2)}B` : 'N/A'}
+## 财务摘要
+- 年收入: ${financials.annualRevenue ? `$${(financials.annualRevenue / 1e9).toFixed(2)}B` : 'N/A'}
+- 年净利润: ${financials.annualNetIncome ? `$${(financials.annualNetIncome / 1e9).toFixed(2)}B` : 'N/A'}
+- 总资产: ${financials.totalAssets ? `$${(financials.totalAssets / 1e9).toFixed(2)}B` : 'N/A'}
+- 总负债: ${financials.totalDebt ? `$${(financials.totalDebt / 1e9).toFixed(2)}B` : 'N/A'}
+- 自由现金流: ${financials.freeCashFlow ? `$${(financials.freeCashFlow / 1e9).toFixed(2)}B` : 'N/A'}
 
-## Recent News
-${news.map((n, i) => `${i + 1}. ${n.title ?? 'No title'}`).join('\n')}
+## 近期新闻
+${news.map((n, i) => `${i + 1}. ${n.title ?? '无标题'}`).join('\n')}
 `;
 
-    if (task.role === 'fundamental_analyst' && data.AnnualIncomeStatement) {
+    if ((task.role === 'fundamental_analyst' || task.role === 'financial_analyst') && data.AnnualIncomeStatement) {
         const statements = data.AnnualIncomeStatement.slice(0, 3);
-        dataContext += `\n## Income Statement Trends (Last 3 Years)\n${JSON.stringify(statements, null, 2)}`;
+        dataContext += `\n## 损益表趋势 (近3年)\n${JSON.stringify(statements, null, 2)}`;
     }
 
-    if (task.role === 'risk_analyst' && data.AnnualBalanceSheet) {
+    if ((task.role === 'financial_analyst' || task.role === 'risk_analyst') && data.AnnualBalanceSheet) {
         const balanceSheet = data.AnnualBalanceSheet.slice(0, 2);
-        dataContext += `\n## Balance Sheet (Last 2 Years)\n${JSON.stringify(balanceSheet, null, 2)}`;
+        dataContext += `\n## 资产负债表 (近2年)\n${JSON.stringify(balanceSheet, null, 2)}`;
     }
 
-    return `You are a ${task.role.replace('_', ' ')}. ${RESEARCH_ROLES.find((r) => r.role === task.role)?.description ?? ''}
+    if (task.role === 'financial_analyst' && data.AnnualCashFlow) {
+        const cashFlow = data.AnnualCashFlow.slice(0, 2);
+        dataContext += `\n## 现金流量表 (近2年)\n${JSON.stringify(cashFlow, null, 2)}`;
+    }
 
-Research Question: "${task.question}"
+    const sectionsText = responsibleSections.length > 0 
+        ? `\n你负责的报告板块: ${responsibleSections.join(', ')}` 
+        : '';
+
+    return `你是一位${roleNameZh}。${roleDescription}${sectionsText}
+
+研究问题: "${task.question}"
 
 ${dataContext}
 
-Provide detailed findings with specific evidence from the data. Cite numbers and sources.`;
+请用中文提供详细的研究发现，引用数据中的具体数字和来源作为证据。`;
 }
 
 function buildSynthesisPrompt(

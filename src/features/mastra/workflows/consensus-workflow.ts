@@ -12,6 +12,7 @@ import {
 import {
     ConsensusReportSchema,
     ModelAnalysisSchema,
+    NinePartReportSchema,
     type ConsensusReport,
     type ModelAnalysis,
 } from '@/features/agents/lib/schemas';
@@ -236,9 +237,18 @@ export const consensusWorkflow = createWorkflow({
                     status: AGENT_STEP_STATUS.RUNNING,
                 });
 
+                // 发送思考事件：开始分析市场数据
+                await emit(
+                    requestContext,
+                    createEvent('thinking', {
+                        message: 'Analyzing market data...',
+                    }),
+                );
+
                 const analysisPrompt = buildConsensusAnalysisPrompt(snapshot);
                 const models = [...CONSENSUS_ANALYSIS_MODELS].sort();
 
+                // 并行调用多个模型进行分析，配置超时和重试策略
                 const modelResults = await runParallelModels(ModelAnalysisSchema, 
                     models.map((modelId) => ({
                         modelId,
@@ -246,15 +256,18 @@ export const consensusWorkflow = createWorkflow({
                         system: CONSENSUS_ANALYSIS_SYSTEM_PROMPT,
                         temperature: 0.7,
                     })),
+                    { timeout: 600000, maxRetries: 3 },
                 );
 
+                // 过滤有效分析结果
                 const validAnalyses = modelResults
                     .filter((r) => !r.error && r.result)
                     .map((r) => ({ ...r.result, modelId: r.modelId }))
                     .sort((a, b) => a.modelId.localeCompare(b.modelId));
 
-                if (validAnalyses.length === 0) {
-                    throw new Error('All model analyses failed');
+                // 弹性检查：至少需要2个有效分析结果才能形成有意义的共识
+                if (validAnalyses.length < 2) {
+                    throw new Error('Insufficient valid analyses for consensus: need at least 2 models');
                 }
 
                 await updateAgentRunStepStatus({
@@ -338,11 +351,22 @@ export const consensusWorkflow = createWorkflow({
                     status: AGENT_STEP_STATUS.RUNNING,
                 });
 
+                // 发送思考事件：开始综合各模型分析结果
+                await emit(
+                    requestContext,
+                    createEvent('thinking', {
+                        message: 'Synthesizing consensus view...',
+                    }),
+                );
+
                 const synthesisPrompt = buildConsensusSynthesisPrompt(modelAnalyses);
+                // 生成共识报告，配置超时和重试策略
                 const report = await generateStructuredOutput(ConsensusReportSchema, synthesisPrompt, {
                     modelId: MODELS.DEFAULT,
                     system: CONSENSUS_SYNTHESIS_SYSTEM_PROMPT,
                     temperature: 0.5,
+                    timeout: 600000,
+                    maxRetries: 3,
                 });
 
                 await updateAgentRunStepStatus({

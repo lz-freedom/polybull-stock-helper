@@ -7,13 +7,16 @@ import {
     extractLatestFinancials,
     extractRecentNews,
 } from '@/features/agents/lib/services/facts-snapshot-service';
+import { EXCHANGE_DESCRIPTIONS } from '@/features/agents/lib/exchanges';
+
+const EXCHANGE_DESC = `Exchange acronym. Must be one of:\n${EXCHANGE_DESCRIPTIONS}`;
 
 export const getStockSnapshotTool = createTool({
     id: 'getStockSnapshot',
     description: 'Get comprehensive stock data including financials, news, and company info',
     inputSchema: z.object({
-        stockSymbol: z.string().describe('Stock ticker symbol (e.g., AAPL, TSLA)'),
-        exchangeAcronym: z.string().describe('Exchange acronym (e.g., NASDAQ, NYSE)'),
+        stockSymbol: z.string().describe('Stock ticker symbol (e.g., AAPL, 0700)'),
+        exchangeAcronym: z.string().describe(EXCHANGE_DESC),
         forceRefresh: z.boolean().optional().describe('Force refresh data from API'),
     }),
     execute: async (input) => {
@@ -41,7 +44,7 @@ export const extractFinancialsTool = createTool({
     description: 'Extract key financial metrics from stock data',
     inputSchema: z.object({
         stockSymbol: z.string(),
-        exchangeAcronym: z.string(),
+        exchangeAcronym: z.string().describe(EXCHANGE_DESC),
     }),
     execute: async (input) => {
         const snapshot = await getOrFetchSnapshot(
@@ -68,7 +71,7 @@ export const searchNewsTool = createTool({
     description: 'Search for recent news about a stock',
     inputSchema: z.object({
         stockSymbol: z.string(),
-        exchangeAcronym: z.string(),
+        exchangeAcronym: z.string().describe(EXCHANGE_DESC),
         limit: z.number().optional().default(10),
     }),
     execute: async (input) => {
