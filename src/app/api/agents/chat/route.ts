@@ -19,30 +19,32 @@ export async function POST(request: NextRequest) {
 
         switch (action) {
             case 'create_session': {
-                const { stockSymbol, exchangeAcronym, title } = body;
+                const { session_id, stock_symbol, exchange_acronym, title } = body;
                 const session = await createChatSession({
+                    id: session_id,
                     userId: user?.id,
-                    stockSymbol,
-                    exchangeAcronym,
+                    stockSymbol: stock_symbol,
+                    exchangeAcronym: exchange_acronym,
                     title,
                 });
                 return NextResponse.json({ success: true, session });
             }
 
             case 'send_message': {
-                const { sessionId, content, referencedReportIds, forceDataRefresh } = body;
-                if (!sessionId || !content) {
+                const { session_id, content, referenced_report_ids, force_data_refresh } = body;
+                if (!session_id || !content) {
                     return NextResponse.json(
-                        { error: 'sessionId and content are required' },
+                        { error: 'session_id and content are required' },
                         { status: 400 },
                     );
                 }
 
                 const result = await sendMessage({
-                    sessionId,
+                    sessionId: session_id,
                     content,
-                    referencedReportIds,
-                    forceDataRefresh,
+                    userId: user?.id,
+                    referencedReportIds: referenced_report_ids,
+                    forceDataRefresh: force_data_refresh,
                 });
 
                 const encoder = new TextEncoder();
@@ -70,38 +72,38 @@ export async function POST(request: NextRequest) {
             }
 
             case 'refresh_data': {
-                const { sessionId } = body;
-                if (!sessionId) {
+                const { session_id } = body;
+                if (!session_id) {
                     return NextResponse.json(
-                        { error: 'sessionId is required' },
+                        { error: 'session_id is required' },
                         { status: 400 },
                     );
                 }
-                const result = await refreshSessionData(sessionId);
+                const result = await refreshSessionData(session_id);
                 return NextResponse.json({ success: true, ...result });
             }
 
             case 'archive_session': {
-                const { sessionId } = body;
-                if (!sessionId) {
+                const { session_id } = body;
+                if (!session_id) {
                     return NextResponse.json(
-                        { error: 'sessionId is required' },
+                        { error: 'session_id is required' },
                         { status: 400 },
                     );
                 }
-                await archiveSession(sessionId);
+                await archiveSession(session_id);
                 return NextResponse.json({ success: true });
             }
 
             case 'update_title': {
-                const { sessionId, title } = body;
-                if (!sessionId || !title) {
+                const { session_id, title } = body;
+                if (!session_id || !title) {
                     return NextResponse.json(
-                        { error: 'sessionId and title are required' },
+                        { error: 'session_id and title are required' },
                         { status: 400 },
                     );
                 }
-                await updateSessionTitle(sessionId, title);
+                await updateSessionTitle(session_id, title);
                 return NextResponse.json({ success: true });
             }
 
@@ -128,14 +130,14 @@ export async function GET(request: NextRequest) {
 
         switch (action) {
             case 'get_session': {
-                const sessionId = searchParams.get('sessionId');
+                const sessionId = searchParams.get('session_id');
                 if (!sessionId) {
                     return NextResponse.json(
-                        { error: 'sessionId is required' },
+                        { error: 'session_id is required' },
                         { status: 400 },
                     );
                 }
-                const session = await getChatSession(parseInt(sessionId, 10));
+                const session = await getChatSession(sessionId);
                 if (!session) {
                     return NextResponse.json(
                         { error: 'Session not found' },
@@ -146,16 +148,16 @@ export async function GET(request: NextRequest) {
             }
 
             case 'get_messages': {
-                const sessionId = searchParams.get('sessionId');
+                const sessionId = searchParams.get('session_id');
                 const limit = searchParams.get('limit');
                 if (!sessionId) {
                     return NextResponse.json(
-                        { error: 'sessionId is required' },
+                        { error: 'session_id is required' },
                         { status: 400 },
                     );
                 }
                 const messages = await getChatMessages(
-                    parseInt(sessionId, 10),
+                    sessionId,
                     limit ? parseInt(limit, 10) : undefined,
                 );
                 return NextResponse.json({ success: true, messages });

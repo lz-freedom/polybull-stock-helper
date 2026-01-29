@@ -1,7 +1,7 @@
 'use server';
 
 import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { getModel, MODELS } from '@/features/mastra';
 import { z } from 'zod';
 
 const extractSchema = z.object({
@@ -13,7 +13,7 @@ const extractSchema = z.object({
 export async function extractStockInfoFromText(text: string) {
   try {
     const { object } = await generateObject({
-      model: openai('gpt-4o'),
+      model: getModel(MODELS.DEFAULT),
       schema: extractSchema,
       system: `You are a financial entity extractor. Your goal is to identify the primary stock symbol or cryptocurrency mentioned in the user's text.
       

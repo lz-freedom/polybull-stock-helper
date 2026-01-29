@@ -18,7 +18,7 @@ type MastraChatParams = ChatStreamHandlerParams<UIMessage> & {
     id?: string;
     stockSymbol?: string;
     exchangeAcronym?: string;
-    sessionId?: number | string;
+    sessionId?: string;
 };
 
 function truncate(text: string, maxLength: number): string {
@@ -60,14 +60,7 @@ export async function POST(request: NextRequest) {
         const chatId = params.id;
         const stockSymbol = params.stockSymbol;
         const exchangeAcronym = params.exchangeAcronym;
-
-        const rawSessionId = params.sessionId;
-        const sessionId =
-            typeof rawSessionId === 'number'
-                ? rawSessionId
-                : typeof rawSessionId === 'string'
-                      ? Number.parseInt(rawSessionId, 10)
-                      : undefined;
+        const sessionId = params.sessionId;
 
         const [existingSession] = sessionId
             ? await db
@@ -95,8 +88,8 @@ export async function POST(request: NextRequest) {
                     .insert(chatSessions)
                     .values({
                         userId: user?.id,
-                        stockSymbol,
-                        exchangeAcronym,
+                        stock_symbol: stockSymbol,
+                        exchange_acronym: exchangeAcronym,
                         title: `Mastra Chat ${new Date().toLocaleDateString()}`,
                         metadata: {
                             source: 'mastra',

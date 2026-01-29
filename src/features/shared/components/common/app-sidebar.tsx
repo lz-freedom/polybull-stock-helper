@@ -43,8 +43,113 @@ import {
     DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 
+import useSWR from 'swr';
+import { MessageSquare } from 'lucide-react';
+
 interface AppSidebarProps {
     locale: string;
+}
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+function ChatHistoryList({ locale, pathname }: { locale: string, pathname: string }) {
+    const { data, error } = useSWR('/api/agents/chat?action=get_user_sessions&limit=20', fetcher, {
+        refreshInterval: 0,
+        revalidateOnFocus: true
+    });
+
+    if (!data?.sessions) return null;
+
+    const sessions = data.sessions as any[];
+
+    // Simple grouping logic
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const historyGroups = {
+        today: [] as any[],
+        yesterday: [] as any[],
+        previous: [] as any[],
+    };
+
+    sessions.forEach(session => {
+        const date = new Date(session.createdAt);
+        date.setHours(0, 0, 0, 0);
+        if (date.getTime() === today.getTime()) {
+            historyGroups.today.push(session);
+        } else if (date.getTime() === yesterday.getTime()) {
+            historyGroups.yesterday.push(session);
+        } else {
+            historyGroups.previous.push(session);
+        }
+    });
+
+    return (
+        <div className="space-y-4">
+            {historyGroups.today.length > 0 && (
+                <div className="space-y-1">
+                    <div className="px-2 text-[10px] font-medium text-muted-foreground uppercase opacity-70">Today</div>
+                    {historyGroups.today.map(session => (
+                        <Link
+                            key={session.id}
+                            href={`/${locale}/chat/${session.id}`}
+                            className={cn(
+                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors truncate",
+                                pathname.includes(session.id)
+                                    ? "bg-secondary text-foreground font-medium"
+                                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                            )}
+                        >
+                            <MessageSquare className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{session.title || 'New Chat'}</span>
+                        </Link>
+                    ))}
+                </div>
+            )}
+            {historyGroups.yesterday.length > 0 && (
+                <div className="space-y-1">
+                    <div className="px-2 text-[10px] font-medium text-muted-foreground uppercase opacity-70">Yesterday</div>
+                    {historyGroups.yesterday.map(session => (
+                        <Link
+                            key={session.id}
+                            href={`/${locale}/chat/${session.id}`}
+                            className={cn(
+                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors truncate",
+                                pathname.includes(session.id)
+                                    ? "bg-secondary text-foreground font-medium"
+                                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                            )}
+                        >
+                            <MessageSquare className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{session.title || 'New Chat'}</span>
+                        </Link>
+                    ))}
+                </div>
+            )}
+            {historyGroups.previous.length > 0 && (
+                <div className="space-y-1">
+                    <div className="px-2 text-[10px] font-medium text-muted-foreground uppercase opacity-70">Previous</div>
+                    {historyGroups.previous.map(session => (
+                        <Link
+                            key={session.id}
+                            href={`/${locale}/chat/${session.id}`}
+                            className={cn(
+                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors truncate",
+                                pathname.includes(session.id)
+                                    ? "bg-secondary text-foreground font-medium"
+                                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                            )}
+                        >
+                            <MessageSquare className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{session.title || 'New Chat'}</span>
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 const themeValues = ['light', 'dark', 'system'] as const;
@@ -71,7 +176,7 @@ export function AppSidebar({ locale }: AppSidebarProps) {
     const t = useTranslations('sidebar');
 
     const menuItems = [
-        { icon: MessageSquarePlus, labelKey: 'newChat', href: '/chat' },
+        { icon: MessageSquarePlus, labelKey: 'newChat', href: '/' },
         { icon: BookOpen, labelKey: 'financeWiki', href: '/wiki' },
         { icon: Activity, labelKey: 'marketPulse', href: '/pulse', isNew: true },
     ];
@@ -109,10 +214,10 @@ export function AppSidebar({ locale }: AppSidebarProps) {
     }, [openDropdown]);
 
     const handleLocaleChange = (newLocale: string) => {
-    // 处理 localePrefix: 'as-needed' 的情况
-    // 英文路径可能没有 /en 前缀 (如 / 而不是 /en)
+        // 处理 localePrefix: 'as-needed' 的情况
+        // 英文路径可能没有 /en 前缀 (如 / 而不是 /en)
         let newPath: string;
-    
+
         // 检查路径是否以当前 locale 开头
         if (pathname.startsWith(`/${locale}/`)) {
             newPath = pathname.replace(`/${locale}/`, `/${newLocale}/`);
@@ -122,7 +227,7 @@ export function AppSidebar({ locale }: AppSidebarProps) {
             // 路径没有 locale 前缀 (英文默认情况)
             newPath = `/${newLocale}${pathname}`;
         }
-    
+
         router.push(newPath);
         setOpenDropdown(null);
     };
@@ -166,7 +271,7 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                 {/* Menu Items */}
                 <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
                     {menuItems.map((item) => {
-                        const isActive = pathname.includes(item.href);
+                        const isActive = pathname.includes(item.href) && (item.href !== '/' || pathname === `/${locale}`);
                         return (
                             <Link
                                 key={item.href}
@@ -199,10 +304,20 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                             </Link>
                         );
                     })}
+
+                    {/* Chat History */}
+                    {!collapsed && user && (
+                        <div className="pt-4 mt-4 border-t border-[#E6EAF0] dark:border-[#2A2F36]">
+                            <div className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                {t('history') || 'History'}
+                            </div>
+                            <ChatHistoryList locale={locale} pathname={pathname} />
+                        </div>
+                    )}
                 </nav>
 
                 {/* Bottom Section */}
-                    <div className="px-2 py-2 space-y-2 border-t border-[#E6EAF0] dark:border-[#2A2F36]">
+                <div className="px-2 py-2 space-y-2 border-t border-[#E6EAF0] dark:border-[#2A2F36]">
                     {/* Settings Row - Theme & Language (Only show if NOT logged in) */}
                     {!collapsed && !user && (
                         <div className="space-y-2">
@@ -224,7 +339,7 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                                         <ChevronRight className={cn('h-4 w-4 transition-transform', openDropdown === 'theme' && 'rotate-90')} />
                                     </div>
                                 </button>
-                
+
                                 {/* Theme Dropdown Menu */}
                                 {openDropdown === 'theme' && (
                                     <div className="absolute left-0 right-0 bottom-full mb-1 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-50">
@@ -239,8 +354,8 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                                                 }}
                                                 className={cn(
                                                     'w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors',
-                                                    theme === opt.value 
-                                                        ? 'bg-primary/10 text-primary' 
+                                                    theme === opt.value
+                                                        ? 'bg-primary/10 text-primary'
                                                         : 'text-foreground hover:bg-accent',
                                                 )}
                                             >
@@ -270,7 +385,7 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                                         <ChevronRight className={cn('h-4 w-4 transition-transform', openDropdown === 'language' && 'rotate-90')} />
                                     </div>
                                 </button>
-                
+
                                 {/* Language Dropdown Menu */}
                                 {openDropdown === 'language' && (
                                     <div className="absolute right-0 bottom-full mb-1 w-32 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-50">
@@ -284,8 +399,8 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                                                 }}
                                                 className={cn(
                                                     'w-full text-left px-3 py-2.5 text-sm transition-colors',
-                                                    locale === opt.value 
-                                                        ? 'bg-primary/10 text-primary' 
+                                                    locale === opt.value
+                                                        ? 'bg-primary/10 text-primary'
                                                         : 'text-foreground hover:bg-accent',
                                                 )}
                                             >
@@ -504,9 +619,9 @@ export function AppSidebar({ locale }: AppSidebarProps) {
 
             {/* Auth Modal */}
             {!user && (
-                <AuthModal 
-                    isOpen={showAuthModal} 
-                    onClose={() => setShowAuthModal(false)} 
+                <AuthModal
+                    isOpen={showAuthModal}
+                    onClose={() => setShowAuthModal(false)}
                     locale={locale}
                 />
             )}

@@ -11,8 +11,8 @@ import {
 } from './lib/graphs/qa';
 
 const consensusInputSchema = z.object({
-    stockSymbol: z.string().min(1).max(20),
-    exchangeAcronym: z.string().min(1).max(20),
+    stockSymbol: z.string().min(1).max(100),
+    exchangeAcronym: z.string().min(1).max(100),
     forceRefresh: z.coerce.boolean().optional(),
 });
 
@@ -42,8 +42,8 @@ export const startConsensusRun = validatedActionWithUser(
 );
 
 const researchInputSchema = z.object({
-    stockSymbol: z.string().min(1).max(20),
-    exchangeAcronym: z.string().min(1).max(20),
+    stockSymbol: z.string().min(1).max(100),
+    exchangeAcronym: z.string().min(1).max(100),
     query: z.string().min(10).max(1000),
     forceRefresh: z.coerce.boolean().optional(),
 });
@@ -75,8 +75,8 @@ export const startResearchRun = validatedActionWithUser(
 );
 
 const createSessionSchema = z.object({
-    stockSymbol: z.string().min(1).max(20).optional(),
-    exchangeAcronym: z.string().min(1).max(20).optional(),
+    stockSymbol: z.string().min(1).max(100).optional(),
+    exchangeAcronym: z.string().min(1).max(100).optional(),
     title: z.string().max(500).optional(),
 });
 
@@ -105,7 +105,7 @@ export const createNewChatSession = validatedActionWithUser(
 );
 
 const sendMessageSchema = z.object({
-    sessionId: z.coerce.number(),
+    sessionId: z.string(),
     content: z.string().min(1).max(10000),
     forceDataRefresh: z.coerce.boolean().optional(),
 });
@@ -135,7 +135,7 @@ export const sendChatMessageAction = validatedActionWithUser(
 );
 
 const refreshDataSchema = z.object({
-    sessionId: z.coerce.number(),
+    sessionId: z.string(),
 });
 
 export const refreshChatData = validatedActionWithUser(

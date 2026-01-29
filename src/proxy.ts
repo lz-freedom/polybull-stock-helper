@@ -57,7 +57,8 @@ export async function proxy(request: NextRequest) {
     // 检查认证状态（通过 session cookie）
     const sessionCookie = request.cookies.get('authjs.session-token') || 
                         request.cookies.get('__Secure-authjs.session-token') ||
-                        request.cookies.get('session'); // 兼容旧的 session
+                        request.cookies.get('next-auth.session-token') ||
+                        request.cookies.get('__Secure-next-auth.session-token');
 
     // 如果没有登录且访问受保护路由，重定向到首页并触发登录弹窗
     if (!sessionCookie) {

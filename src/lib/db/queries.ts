@@ -1,43 +1,26 @@
 import { desc, and, eq, isNull } from 'drizzle-orm';
 import { db } from './drizzle';
 import { activityLogs, teamMembers, teams, users } from './schema';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@features/auth/lib/session';
+import { auth } from '@features/auth/lib/config';
 
 export async function getUser() {
-    const sessionCookie = (await cookies()).get('session');
-    if (!sessionCookie || !sessionCookie.value) {
-        console.log('getUser: No session cookie');
+    const session = await auth();
+    if (!session?.user?.id) {
         return null;
     }
 
-    const sessionData = await verifyToken(sessionCookie.value);
-    if (
-        !sessionData ||
-    !sessionData.user ||
-    typeof sessionData.user.id !== 'number'
-    ) {
-        console.log('getUser: Invalid session data');
-        return null;
-    }
-
-    if (new Date(sessionData.expires) < new Date()) {
-        console.log('getUser: Session expired');
+    const userId = parseInt(session.user.id, 10);
+    if (isNaN(userId)) {
         return null;
     }
 
     const user = await db
         .select()
         .from(users)
-        .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
+        .where(and(eq(users.id, userId), isNull(users.deletedAt)))
         .limit(1);
 
-    if (user.length === 0) {
-        console.log('getUser: User not found in DB', sessionData.user.id);
-        return null;
-    }
-
-    return user[0];
+    return user[0] || null;
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {

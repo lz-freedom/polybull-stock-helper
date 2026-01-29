@@ -65,6 +65,7 @@ function buildConversationPrompt(
 }
 
 export interface CreateSessionInput {
+    id?: string;
     userId?: number;
     stockSymbol?: string;
     exchangeAcronym?: string;
@@ -77,9 +78,10 @@ export async function createChatSession(
     const [session] = await db
         .insert(chatSessions)
         .values({
+            id: input.id,
             userId: input.userId,
-            stockSymbol: input.stockSymbol,
-            exchangeAcronym: input.exchangeAcronym,
+            stock_symbol: input.stockSymbol,
+            exchange_acronym: input.exchangeAcronym,
             title: input.title ?? `Chat ${new Date().toLocaleDateString()}`,
         })
         .returning();
@@ -88,7 +90,7 @@ export async function createChatSession(
 }
 
 export async function getChatSession(
-    sessionId: number,
+    sessionId: string,
 ): Promise<ChatSession | null> {
     const [session] = await db
         .select()
@@ -99,7 +101,7 @@ export async function getChatSession(
 }
 
 export async function getChatMessages(
-    sessionId: number,
+    sessionId: string,
     limit: number = 50,
 ): Promise<ChatMessage[]> {
     return db
@@ -125,8 +127,9 @@ export async function getUserSessions(
 }
 
 export interface SendMessageInput {
-    sessionId: number;
+    sessionId: string;
     content: string;
+    userId?: number;
     referencedReportIds?: number[];
     forceDataRefresh?: boolean;
 }
@@ -140,9 +143,17 @@ export interface SendMessageResult {
 export async function sendMessage(
     input: SendMessageInput,
 ): Promise<SendMessageResult> {
-    const session = await getChatSession(input.sessionId);
+    let session = await getChatSession(input.sessionId);
+    
+    // Auto-create session if it doesn't exist (handles race conditions from frontend)
     if (!session) {
-        throw new Error(`Session ${input.sessionId} not found`);
+        session = await createChatSession({
+            id: input.sessionId,
+            userId: input.userId,
+            title: input.content.slice(0, 50) || 'New Chat',
+            stockSymbol: undefined,
+            exchangeAcronym: undefined,
+        });
     }
 
     const [userMessage] = await db
@@ -160,10 +171,10 @@ export async function sendMessage(
     let context = '';
     let snapshot: FactsSnapshot | null = null;
 
-    if (session.stockSymbol && session.exchangeAcronym) {
+    if (session.stock_symbol && session.exchange_acronym) {
         snapshot = await getOrFetchSnapshot(
-            session.stockSymbol,
-            session.exchangeAcronym,
+            session.stock_symbol,
+            session.exchange_acronym,
             { forceRefresh: input.forceDataRefresh },
         );
         context = buildContextFromSnapshot(snapshot);
@@ -229,7 +240,7 @@ export async function sendMessage(
     };
 }
 
-export async function refreshSessionData(sessionId: number): Promise<{
+export async function refreshSessionData(sessionId: string): Promise<{
     snapshot: FactsSnapshot;
     agentRunId: number;
 }> {
@@ -238,13 +249,13 @@ export async function refreshSessionData(sessionId: number): Promise<{
         throw new Error(`Session ${sessionId} not found`);
     }
 
-    if (!session.stockSymbol || !session.exchangeAcronym) {
+    if (!session.stock_symbol || !session.exchange_acronym) {
         throw new Error('Session has no associated stock');
     }
 
     const snapshot = await getOrFetchSnapshot(
-        session.stockSymbol,
-        session.exchangeAcronym,
+        session.stock_symbol,
+        session.exchange_acronym,
         { forceRefresh: true },
     );
 
@@ -257,8 +268,8 @@ export async function refreshSessionData(sessionId: number): Promise<{
             input: {
                 action: 'refresh_data',
                 sessionId,
-                stockSymbol: session.stockSymbol,
-                exchangeAcronym: session.exchangeAcronym,
+                stockSymbol: session.stock_symbol,
+                exchangeAcronym: session.exchange_acronym,
             },
             output: { snapshotId: snapshot.id },
             factsSnapshotId: snapshot.id,
@@ -270,14 +281,14 @@ export async function refreshSessionData(sessionId: number): Promise<{
     await db.insert(chatMessages).values({
         sessionId,
         role: 'system',
-        content: `Data refreshed for ${session.stockSymbol}. Latest data as of ${snapshot.fetchedAt.toISOString()}.`,
+        content: `Data refreshed for ${session.stock_symbol}. Latest data as of ${snapshot.fetchedAt.toISOString()}.`,
         agentRunId: run.id,
     });
 
     return { snapshot, agentRunId: run.id };
 }
 
-export async function archiveSession(sessionId: number): Promise<void> {
+export async function archiveSession(sessionId: string): Promise<void> {
     await db
         .update(chatSessions)
         .set({ isArchived: true, updatedAt: new Date() })
@@ -285,7 +296,7 @@ export async function archiveSession(sessionId: number): Promise<void> {
 }
 
 export async function updateSessionTitle(
-    sessionId: number,
+    sessionId: string,
     title: string,
 ): Promise<void> {
     await db

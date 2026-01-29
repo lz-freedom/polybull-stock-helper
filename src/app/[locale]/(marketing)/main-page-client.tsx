@@ -48,7 +48,7 @@ export function MainPageClient({ locale }: MainPageClientProps) {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [agentType, setAgentType] = useState('qa');
-    
+
     // Chat state
     const [hasStartedChat, setHasStartedChat] = useState(false);
     const [sessionId, setSessionId] = useState<number | null>(null);
@@ -82,7 +82,7 @@ export function MainPageClient({ locale }: MainPageClientProps) {
             const exchange = info?.exchange || 'NASDAQ';
 
             // Determine action based on agent type
-            let payload: any = { 
+            let payload: any = {
                 stockSymbol: stockSymbol,
                 exchangeAcronym: exchange,
                 title: info?.symbol ? `Analysis: ${info.symbol}` : `Query: ${content.slice(0, 20)}...`
@@ -91,12 +91,12 @@ export function MainPageClient({ locale }: MainPageClientProps) {
             const res = await fetch('/api/agents/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'create_session', 
+                body: JSON.stringify({
+                    action: 'create_session',
                     ...payload
                 })
             });
-            
+
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && data.session) {
@@ -111,31 +111,51 @@ export function MainPageClient({ locale }: MainPageClientProps) {
 
     const handleSend = async () => {
         if (!inputValue.trim() || isLoading) return;
-        
+
         const content = inputValue.trim();
+        // Do not clear input value immediately if we fail, but for now we clear
         setInputValue('');
-        setHasStartedChat(true); // Show loading UI immediately if we wanted to stay, but we are redirecting.
+        setHasStartedChat(true);
         setIsLoading(true);
 
         try {
-            // 1. Create Session
-            const sessionId = await handleCreateSession(content);
+            // 1. Create Session explicitly
+            // We use the same 'create_session' action as verified in NewChatPage
+            const sessionId = crypto.randomUUID();
 
-            // 2. Navigate to Chat Page with session and prompt
-            const params = new URLSearchParams();
-            if (sessionId) {
-                params.set('sessionId', sessionId.toString());
+            // Extract info if needed (optional optimization, server can do it too)
+            // But to keep consistent with NewChatPage simplest flow:
+            const res = await fetch('/api/agents/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'create_session',
+                    session_id: sessionId,
+                    stock_symbol: null,
+                    exchange_acronym: null,
+                    title: content.slice(0, 50) + (content.length > 50 ? '...' : '')
+                })
+            });
+
+            if (!res.ok) {
+                console.error('Failed to create session on server');
+                // We proceed anyway to try to recover on the chat page?
+                // Or we might fail here. Let's proceed as NewChatPage does.
             }
-            params.set('initialPrompt', content);
-            params.set('type', agentType);
-            
-            // 3. Redirect
-            router.push(`/${locale}/chat?${params.toString()}`);
+
+            // 2. Redirect to standardized route
+            const params = new URLSearchParams();
+            params.set('initial_prompt', content); // snake_case
+            // params.set('type', agentType); // If backend supports type in create_session, we should pass it there. 
+            // For now, let's keep it minimal as requested.
+
+            router.push(`/${locale}/chat/${sessionId}?${params.toString()}`);
 
         } catch (error) {
             console.error('Failed to process request', error);
-            // Fallback
-            router.push(`/${locale}/chat?initialPrompt=${encodeURIComponent(content)}&type=${agentType}`);
+            // Fallback?
+            const fallbackId = crypto.randomUUID();
+            router.push(`/${locale}/chat/${fallbackId}?initial_prompt=${encodeURIComponent(content)}`);
         } finally {
             setIsLoading(false);
         }
@@ -193,13 +213,13 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                     >
                                         <div className={cn(
                                             "h-8 w-8 rounded-full flex items-center justify-center shrink-0 border",
-                                            msg.role === 'user' 
-                                                ? "bg-pink-500 text-white border-pink-500" 
+                                            msg.role === 'user'
+                                                ? "bg-pink-500 text-white border-pink-500"
                                                 : "bg-white dark:bg-zinc-800 text-foreground border-black/5 dark:border-white/10"
                                         )}>
                                             {msg.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                                         </div>
-                                        
+
                                         <div className={cn(
                                             "rounded-2xl px-5 py-3 text-sm shadow-sm max-w-[85%]",
                                             msg.role === 'user'
@@ -260,7 +280,7 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="start">
                                                 {AGENT_OPTIONS.map((option) => (
-                                                    <DropdownMenuItem 
+                                                    <DropdownMenuItem
                                                         key={option.value}
                                                         onClick={() => setAgentType(option.value)}
                                                         className="gap-2"
@@ -279,8 +299,8 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                                 disabled={!inputValue.trim() || isLoading}
                                                 className={cn(
                                                     "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
-                                                    inputValue.trim() 
-                                                        ? "bg-pink-500 hover:bg-pink-600 text-white shadow-sm" 
+                                                    inputValue.trim()
+                                                        ? "bg-pink-500 hover:bg-pink-600 text-white shadow-sm"
                                                         : "bg-muted text-muted-foreground cursor-not-allowed"
                                                 )}
                                             >

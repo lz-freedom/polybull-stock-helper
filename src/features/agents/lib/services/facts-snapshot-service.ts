@@ -122,7 +122,11 @@ async function fetchFromFastFinanceAPI(
         );
     }
 
-    return response.json();
+    const json = await response.json();
+    if (json.code !== '200000') {
+        throw new Error(`Fast Finance API returned error: ${json.message}`);
+    }
+    return json.data;
 }
 
 export async function getLatestSnapshot(
@@ -134,8 +138,8 @@ export async function getLatestSnapshot(
         .from(factsSnapshots)
         .where(
             and(
-                eq(factsSnapshots.stockSymbol, stockSymbol),
-                eq(factsSnapshots.exchangeAcronym, exchangeAcronym),
+                eq(factsSnapshots.stock_symbol, stockSymbol),
+                eq(factsSnapshots.exchange_acronym, exchangeAcronym),
             ),
         )
         .orderBy(desc(factsSnapshots.fetchedAt))
@@ -167,8 +171,8 @@ export async function createSnapshot(
     const dataHash = computeDataHash(data);
 
     const newSnapshot: NewFactsSnapshot = {
-        stockSymbol,
-        exchangeAcronym,
+        stock_symbol: stockSymbol,
+        exchange_acronym: exchangeAcronym,
         data: data as Record<string, unknown>,
         dataHash,
         fetchedAt: new Date(),
@@ -214,18 +218,26 @@ export async function getOrFetchSnapshot(
 }
 
 export function extractStockInfo(snapshot: FactsSnapshot) {
-    const data = snapshot.data as FastFinanceResponse;
-    const info = data.info ?? data.Info ?? {};
+    let data = snapshot.data as any;
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    const info = data.info ?? data.Info ?? (data.longName ? data : {});
 
     return {
-        symbol: snapshot.stockSymbol,
-        exchange: snapshot.exchangeAcronym,
+        symbol: snapshot.stock_symbol,
+        exchange: snapshot.exchange_acronym,
         name: (info.longName ?? info.shortName) as string | undefined,
         sector: info.sector as string | undefined,
         industry: info.industry as string | undefined,
         marketCap: info.marketCap as number | undefined,
         currency: info.currency as string | undefined,
-        
+
         // Price
         currentPrice: (info.currentPrice ?? info.regularMarketPrice) as number | undefined,
         previousClose: info.previousClose as number | undefined,
@@ -234,25 +246,25 @@ export function extractStockInfo(snapshot: FactsSnapshot) {
         dayHigh: info.dayHigh as number | undefined,
         fiftyTwoWeekLow: info.fiftyTwoWeekLow as number | undefined,
         fiftyTwoWeekHigh: info.fiftyTwoWeekHigh as number | undefined,
-        
+
         // Valuation
         trailingPE: info.trailingPE as number | undefined,
         forwardPE: info.forwardPE as number | undefined,
         priceToBook: info.priceToBook as number | undefined,
         priceToSales: info.priceToSalesTrailing12Months as number | undefined,
         pegRatio: info.pegRatio as number | undefined,
-        
+
         // Quality
         returnOnEquity: info.returnOnEquity as number | undefined,
         returnOnAssets: info.returnOnAssets as number | undefined,
         grossMargins: info.grossMargins as number | undefined,
         operatingMargins: info.operatingMargins as number | undefined,
         profitMargins: info.profitMargins as number | undefined,
-        
+
         // Growth
         revenueGrowth: info.revenueGrowth as number | undefined,
         earningsGrowth: info.earningsGrowth as number | undefined,
-        
+
         // Dividend
         dividendYield: info.dividendYield as number | undefined,
     };
@@ -267,33 +279,56 @@ export function extractLatestFinancials(snapshot: FactsSnapshot): {
     totalDebt?: number;
     freeCashFlow?: number;
 } {
-    const data = snapshot.data as FastFinanceResponse;
+    let data = snapshot.data as any;
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            // ignore
+        }
+    }
 
     const latestAnnualIncome =
         data.income_yearly_yefinancials?.[0] ??
         data.AnnualIncomeStatement?.[0] ??
+        data.income_statement_history_yearly?.[0] ??
         {};
     const latestQuarterlyIncome =
         data.income_quarterly_yefinancials?.[0] ??
         data.QuarterlyIncomeStatement?.[0] ??
+        data.income_statement_history_quarterly?.[0] ??
         {};
     const latestAnnualBalance =
         data.balance_yearly_yefinancials?.[0] ??
         data.AnnualBalanceSheet?.[0] ??
+        data.balance_sheet_history_yearly?.[0] ??
         {};
     const latestAnnualCashFlow =
         data.cashflow_yearly_yefinancials?.[0] ??
         data.AnnualCashFlow?.[0] ??
+        data.cashflow_statement_history_yearly?.[0] ??
         {};
 
     return {
-        annualRevenue: (latestAnnualIncome.totalRevenue ?? latestAnnualIncome.TotalRevenue) as number | undefined,
-        quarterlyRevenue: (latestQuarterlyIncome.totalRevenue ?? latestQuarterlyIncome.TotalRevenue) as number | undefined,
-        annualNetIncome: (latestAnnualIncome.netIncome ?? latestAnnualIncome.NetIncome) as number | undefined,
-        quarterlyNetIncome: (latestQuarterlyIncome.netIncome ?? latestQuarterlyIncome.NetIncome) as number | undefined,
-        totalAssets: (latestAnnualBalance.totalAssets ?? latestAnnualBalance.TotalAssets) as number | undefined,
-        totalDebt: (latestAnnualBalance.totalDebt ?? latestAnnualBalance.TotalDebt) as number | undefined,
-        freeCashFlow: (latestAnnualCashFlow.freeCashFlow ?? latestAnnualCashFlow.FreeCashFlow) as number | undefined,
+        annualRevenue: (latestAnnualIncome.totalRevenue ??
+            latestAnnualIncome.TotalRevenue ??
+            latestAnnualIncome.operatingRevenue) as number | undefined,
+        quarterlyRevenue: (latestQuarterlyIncome.totalRevenue ??
+            latestQuarterlyIncome.TotalRevenue ??
+            latestQuarterlyIncome.operatingRevenue) as number | undefined,
+        annualNetIncome: (latestAnnualIncome.netIncome ??
+            latestAnnualIncome.NetIncome ??
+            latestAnnualIncome.netIncomeToCommon) as number | undefined,
+        quarterlyNetIncome: (latestQuarterlyIncome.netIncome ??
+            latestQuarterlyIncome.NetIncome ??
+            latestQuarterlyIncome.netIncomeToCommon) as number | undefined,
+        totalAssets: (latestAnnualBalance.totalAssets ??
+            latestAnnualBalance.TotalAssets) as number | undefined,
+        totalDebt: (latestAnnualBalance.totalDebt ?? latestAnnualBalance.TotalDebt) as
+            | number
+            | undefined,
+        freeCashFlow: (latestAnnualCashFlow.freeCashFlow ??
+            latestAnnualCashFlow.FreeCashFlow) as number | undefined,
     };
 }
 
@@ -306,13 +341,25 @@ export function extractRecentNews(
     publisher?: string;
     publishedAt?: string;
 }> {
-    const data = snapshot.data as FastFinanceResponse;
+    let data = snapshot.data as any;
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            // ignore
+        }
+    }
     const news = data.news ?? data.News ?? [];
 
-    return news.slice(0, limit).map((item) => ({
-        title: item.title as string | undefined,
-        link: item.link as string | undefined,
-        publisher: item.publisher as string | undefined,
-        publishedAt: (item.providerPublishTime ?? item.publishedAt) as string | undefined,
-    }));
+    return news.slice(0, limit).map((item: any) => {
+        // Handle new structure where data is nested under 'content'
+        const content = (item.content as any) || item;
+
+        return {
+            title: (content.title || item.title) as string | undefined,
+            link: (content.canonicalUrl?.url || content.link || item.link) as string | undefined,
+            publisher: (content.provider?.displayName || content.publisher || item.publisher) as string | undefined,
+            publishedAt: (content.pubDate || content.displayTime || item.providerPublishTime || item.publishedAt) as string | undefined,
+        };
+    });
 }

@@ -9,6 +9,7 @@ import {
     jsonb,
     boolean,
     index,
+    uuid,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -275,8 +276,8 @@ export const factsSnapshots = pgTable(
     {
         id: serial('id').primaryKey(),
         // 股票标识
-        stockSymbol: varchar('stock_symbol', { length: 20 }).notNull(),
-        exchangeAcronym: varchar('exchange_acronym', { length: 20 }).notNull(),
+        stock_symbol: varchar('stock_symbol', { length: 100 }).notNull(),
+        exchange_acronym: varchar('exchange_acronym', { length: 100 }).notNull(),
         // 数据内容 (JSON 存储完整 API 响应)
         data: jsonb('data').notNull(),
         // 数据版本/哈希，用于判断是否需要刷新
@@ -289,8 +290,8 @@ export const factsSnapshots = pgTable(
     },
     (table) => [
         index('facts_snapshots_symbol_exchange_idx').on(
-            table.stockSymbol,
-            table.exchangeAcronym,
+            table.stock_symbol,
+            table.exchange_acronym,
         ),
         index('facts_snapshots_fetched_at_idx').on(table.fetchedAt),
     ],
@@ -466,7 +467,7 @@ export const reportSections = pgTable(
 export const chatSessions = pgTable(
     'chat_sessions',
     {
-        id: serial('id').primaryKey(),
+        id: uuid('id').defaultRandom().primaryKey(),
         // 关联用户 (可选)
         userId: integer('user_id').references(() => users.id, {
             onDelete: 'set null',
@@ -474,8 +475,8 @@ export const chatSessions = pgTable(
         // 会话标题 (自动生成或用户设置)
         title: varchar('title', { length: 500 }),
         // 关联的股票 (可选，会话可能涉及多只股票)
-        stockSymbol: varchar('stock_symbol', { length: 20 }),
-        exchangeAcronym: varchar('exchange_acronym', { length: 20 }),
+        stock_symbol: varchar('stock_symbol', { length: 100 }),
+        exchange_acronym: varchar('exchange_acronym', { length: 100 }),
         // 会话元数据
         metadata: jsonb('metadata'),
         // 是否归档
@@ -498,7 +499,7 @@ export const chatMessages = pgTable(
     'chat_messages',
     {
         id: serial('id').primaryKey(),
-        sessionId: integer('session_id')
+        sessionId: uuid('session_id')
             .notNull()
             .references(() => chatSessions.id, { onDelete: 'cascade' }),
         // 消息角色: user, assistant, system

@@ -16,15 +16,16 @@ import {
     ActivityType,
     invitations,
 } from '@/lib/db/schema';
-import { comparePasswords, hashPassword, setSession } from '@features/auth/lib/session';
+import { comparePasswords, hashPassword } from '@features/auth/lib/session';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { createCheckoutSession } from '@features/payments/lib/stripe';
 import { getUser, getUserWithTeam } from '@/lib/db/queries';
 import {
     validatedAction,
     validatedActionWithUser,
 } from '@features/auth/lib/middleware';
+import { signIn as nextAuthSignIn, signOut as nextAuthSignOut } from './config';
+import { AuthError } from 'next-auth';
 
 async function logActivity(
     teamId: number | null | undefined,
@@ -52,49 +53,49 @@ const signInSchema = z.object({
 export const signIn = validatedAction(signInSchema, async (data, formData) => {
     const { email, password } = data;
 
-    const userWithTeam = await db
-        .select({
-            user: users,
-            team: teams,
-        })
-        .from(users)
-        .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
-        .leftJoin(teams, eq(teamMembers.teamId, teams.id))
-        .where(eq(users.email, email))
-        .limit(1);
+    try {
+        await nextAuthSignIn('credentials', {
+            email,
+            password,
+            redirect: false,
+        });
 
-    if (userWithTeam.length === 0) {
+        // After successful sign in, we can get the user to log activity
+        const user = await getUser();
+        if (user) {
+            const userWithTeam = await getUserWithTeam(user.id);
+            await logActivity(userWithTeam?.teamId, user.id, ActivityType.SIGN_IN);
+        }
+    } catch (error) {
+        if (error instanceof AuthError) {
+            return {
+                error: 'Invalid email or password. Please try again.',
+                email,
+                password,
+            };
+        }
+        // Next.js redirect throws a special error, we should let it pass
+        if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+            throw error;
+        }
+        console.error('Sign in error:', error);
         return {
-            error: 'Invalid email or password. Please try again.',
+            error: 'An unexpected error occurred. Please try again.',
             email,
             password,
         };
     }
-
-    const { user: foundUser, team: foundTeam } = userWithTeam[0];
-
-    const isPasswordValid = await comparePasswords(
-        password,
-        foundUser.passwordHash!,
-    );
-
-    if (!isPasswordValid) {
-        return {
-            error: 'Invalid email or password. Please try again.',
-            email,
-            password,
-        };
-    }
-
-    await Promise.all([
-        setSession(foundUser),
-        logActivity(foundTeam?.id, foundUser.id, ActivityType.SIGN_IN),
-    ]);
 
     const redirectTo = formData.get('redirect') as string | null;
     if (redirectTo === 'checkout') {
+        const user = await getUser();
+        const userWithTeam = user ? await getUserWithTeam(user.id) : null;
         const priceId = formData.get('priceId') as string;
-        return createCheckoutSession({ team: foundTeam, priceId });
+        
+        // We need the team object for createCheckoutSession
+        const team = userWithTeam?.teamId ? (await db.select().from(teams).where(eq(teams.id, userWithTeam.teamId)).limit(1))[0] : null;
+        
+        return createCheckoutSession({ team, priceId });
     }
 
     redirect('/dashboard');
@@ -209,8 +210,18 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
     await Promise.all([
         db.insert(teamMembers).values(newTeamMember),
         logActivity(teamId, createdUser.id, ActivityType.SIGN_UP),
-        setSession(createdUser),
     ]);
+
+    // Sign in the user
+    try {
+        await nextAuthSignIn('credentials', {
+            email,
+            password,
+            redirect: false,
+        });
+    } catch (error) {
+        console.error('Sign in after sign up failed:', error);
+    }
 
     const redirectTo = formData.get('redirect') as string | null;
     if (redirectTo === 'checkout') {
@@ -222,10 +233,12 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 });
 
 export async function signOut() {
-    const user = (await getUser()) as User;
-    const userWithTeam = await getUserWithTeam(user.id);
-    await logActivity(userWithTeam?.teamId, user.id, ActivityType.SIGN_OUT);
-    (await cookies()).delete('session');
+    const user = await getUser();
+    if (user) {
+        const userWithTeam = await getUserWithTeam(user.id);
+        await logActivity(userWithTeam?.teamId, user.id, ActivityType.SIGN_OUT);
+    }
+    await nextAuthSignOut({ redirectTo: '/' });
 }
 
 const updatePasswordSchema = z.object({
@@ -333,8 +346,7 @@ export const deleteAccount = validatedActionWithUser(
                 );
         }
 
-        (await cookies()).delete('session');
-        redirect('/sign-in');
+        await nextAuthSignOut({ redirectTo: '/sign-in' });
     },
 );
 
