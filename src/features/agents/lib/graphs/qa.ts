@@ -11,6 +11,7 @@ import {
     type FactsSnapshot,
 } from '@/lib/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
+import { z } from 'zod';
 import { createTextStream, MODELS, type ModelId } from '../services/llm-client';
 import {
     getOrFetchSnapshot,
@@ -137,14 +138,14 @@ export interface SendMessageInput {
 export interface SendMessageResult {
     userMessage: ChatMessage;
     assistantMessage: ChatMessage;
-    stream: AsyncIterable<string>;
+    result: any; // Using any to avoid circular dependency or complex type imports from ai-sdk, or strictly: Awaited<ReturnType<typeof streamText>>
 }
 
 export async function sendMessage(
     input: SendMessageInput,
 ): Promise<SendMessageResult> {
     let session = await getChatSession(input.sessionId);
-    
+
     // Auto-create session if it doesn't exist (handles race conditions from frontend)
     if (!session) {
         session = await createChatSession({
@@ -216,9 +217,51 @@ export async function sendMessage(
         })
         .returning();
 
+    const tools = {
+        displayStockPrice: {
+            description: 'Display a stock price card with current price, change, and market cap.',
+            parameters: z.object({
+                symbol: z.string(),
+                price: z.number(),
+                change: z.number(),
+                changePercent: z.number(),
+                currency: z.string().optional(),
+                marketCap: z.string().optional(),
+                high: z.number().optional(),
+                low: z.number().optional(),
+            }),
+            execute: async (args: any) => args,
+        },
+        displayNews: {
+            description: 'Display a list of recent news articles.',
+            parameters: z.object({
+                symbol: z.string(),
+                news: z.array(z.object({
+                    title: z.string(),
+                    source: z.string(),
+                    url: z.string(),
+                    publishedAt: z.string(),
+                })),
+            }),
+            execute: async (args: any) => args,
+        },
+        displayFinancials: {
+            description: 'Display a table of key financial metrics.',
+            parameters: z.object({
+                symbol: z.string(),
+                metrics: z.array(z.object({
+                    label: z.string(),
+                    value: z.union([z.string(), z.number()]),
+                    period: z.string().optional(),
+                })),
+            }),
+            execute: async (args: any) => args,
+        },
+    };
+
     const streamResult = createTextStream(prompt, {
         modelId: MODELS.DEFAULT,
-        system: QA_SYSTEM_PROMPT,
+        system: QA_SYSTEM_PROMPT + "\n\nYou can use tools to display data cards to the user. When you mention stock prices, news, or financials, ALWAYS call the corresponding tool to show a visual card in addition to your text response.",
         temperature: 0.7,
         onFinish: async (text) => {
             await db
@@ -231,12 +274,13 @@ export async function sendMessage(
                 .set({ updatedAt: new Date() })
                 .where(eq(chatSessions.id, input.sessionId));
         },
+        tools,
     });
 
     return {
         userMessage,
         assistantMessage,
-        stream: streamResult.textStream,
+        result: streamResult,
     };
 }
 

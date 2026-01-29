@@ -1,13 +1,10 @@
 # 当前任务状态
 
-## [2026-01-29] 任务：Refine AskSurf Chat UI (Complete)
-- [x] 重构聊天会话流程 (UUID, Sidebar History)
-- [x] 优化 UI 匹配 AskSurf 风格
-    - [x] 去除卡片容器 (Open Flow)
-    - [x] 居中布局 (Max-w-3xl)
-    - [x] 悬浮输入框 (Sticky, Frosted Glass 30%)
-    - [x] 全局滚动优化
-- [x] 代码已提交 (Commit: feat(chat): refactor UI to match AskSurf aesthetic)
+## [2026-01-30] 任务：UI Refinements (Complete)
+- [x] 优化登录弹窗文案 (Created Account -> Created Account Implies Agreement)
+- [x] 更新网站 Logo (Use src/assets/logo.png)
+- [x] 放大 Logo 和标题 (Sidebar: sm->md, Home: md->lg)
+- [x] 对齐 Logo 和标题高度 (Updated sizeMap: sm->xl, md->2xl, lg->3xl)
 
 ## 下一步计划
 - 等待用户新的指令

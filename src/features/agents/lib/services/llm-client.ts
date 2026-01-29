@@ -48,14 +48,14 @@ function extractJsonFromText(text: string): string {
     if (jsonMatch) {
         return jsonMatch[1].trim();
     }
-    
+
     // 尝试提取第一个和最后一个花括号之间的内容
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace !== -1) {
         return text.slice(firstBrace, lastBrace + 1);
     }
-    
+
     return text;
 }
 
@@ -77,16 +77,16 @@ export async function generateStructuredOutput<T extends z.ZodType>(
         maxRetries?: number;   // 最大重试次数
     } = {},
 ): Promise<z.infer<T>> {
-    const { 
-        modelId = MODELS.DEFAULT, 
-        system, 
+    const {
+        modelId = MODELS.DEFAULT,
+        system,
         temperature = 0.7,
         timeout,
         maxRetries,
     } = options;
 
     const jsonSchema = zodToJsonSchema(schema, 'schema');
-    
+
     // 构建结构化提示词，要求模型返回 JSON 格式
     const structuredPrompt = `${prompt}
 
@@ -183,6 +183,7 @@ export function createTextStream(
         onFinish?: (text: string) => void;
         timeout?: number;      // 超时时间（毫秒）
         maxRetries?: number;   // 最大重试次数
+        tools?: Record<string, any>; // 工具支持
     } = {},
 ) {
     const {
@@ -192,6 +193,7 @@ export function createTextStream(
         onFinish,
         timeout,
         maxRetries,
+        tools,
     } = options;
 
     // 构建 SDK 调用选项
@@ -201,6 +203,7 @@ export function createTextStream(
         system,
         temperature,
         onFinish: onFinish ? ({ text }) => onFinish(text) : undefined,
+        tools,
     };
 
     // 如果指定了超时时间，创建 AbortSignal

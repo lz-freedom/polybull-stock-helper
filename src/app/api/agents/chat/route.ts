@@ -31,7 +31,21 @@ export async function POST(request: NextRequest) {
             }
 
             case 'send_message': {
-                const { session_id, content, referenced_report_ids, force_data_refresh } = body;
+                let { session_id, content, referenced_report_ids, force_data_refresh, messages } = body;
+
+                // Support standard useChat payload which sends { messages: [...] }
+                if (!content && messages && Array.isArray(messages) && messages.length > 0) {
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage.role === 'user') {
+                        content = lastMessage.content;
+                    }
+                }
+
+                if (!session_id) {
+                    // Try to find session_id in body root if not destructured (useChat can pass body)
+                    // Already structed above.
+                }
+
                 if (!session_id || !content) {
                     return NextResponse.json(
                         { error: 'session_id and content are required' },
@@ -47,28 +61,7 @@ export async function POST(request: NextRequest) {
                     forceDataRefresh: force_data_refresh,
                 });
 
-                const encoder = new TextEncoder();
-                const stream = new ReadableStream({
-                    async start(controller) {
-                        try {
-                            for await (const chunk of result.stream) {
-                                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
-                            }
-                            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-                            controller.close();
-                        } catch (error) {
-                            controller.error(error);
-                        }
-                    },
-                });
-
-                return new Response(stream, {
-                    headers: {
-                        'Content-Type': 'text/event-stream',
-                        'Cache-Control': 'no-cache',
-                        Connection: 'keep-alive',
-                    },
-                });
+                return result.result.toDataStreamResponse();
             }
 
             case 'refresh_data': {

@@ -1,33 +1,21 @@
 'use client';
 
-import { Suspense, use, useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, use, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
     Send,
-    MessageSquare,
-    Plus,
     Bot,
     User as UserIcon,
-    Sparkles,
-    ChevronDown,
     Loader2
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { ChatSession, ChatMessage } from '@/lib/db/schema';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-interface MessageWithStatus extends ChatMessage {
-    isStreaming?: boolean;
-    error?: boolean;
-}
+import { useChat } from '@ai-sdk/react';
+import { Message } from 'ai';
+import { StockPriceCard } from '@/components/chat-cards/stock-price-card';
+import { NewsCard } from '@/components/chat-cards/news-card';
+import { FinancialsCard } from '@/components/chat-cards/financials-card';
 
 interface ChatPageProps {
     params: Promise<{ locale: string; sessionId: string }>;
@@ -47,176 +35,86 @@ function ChatPageContent({ params }: ChatPageProps) {
     const { status } = useSession();
     const t = useTranslations('home');
 
+    // Auth check
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push(`/${locale}/sign-in`);
         }
     }, [status, router, locale]);
 
-    const [inputValue, setInputValue] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [initialMessages, setInitialMessages] = useState<Message[]>([]);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-    const [messages, setMessages] = useState<MessageWithStatus[]>([]);
+    const { messages, input = '', handleInputChange, handleSubmit, append, setMessages, isLoading } = useChat({
+        api: '/api/agents/chat',
+        body: {
+            action: 'send_message',
+            session_id: sessionId,
+        },
+        initialMessages,
+        id: sessionId,
+    });
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasTriggeredAutoSend = useRef(false);
     const searchParams = useSearchParams();
     const initialPrompt = searchParams.get('initial_prompt');
 
-    // Auto-scroll to bottom
+    // Auto-scroll
     useEffect(() => {
-        if (messages.length >= 0) {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages]);
 
-    // Load current session messages
-    const loadSessionMessages = useCallback(async (id: string) => {
-        setIsLoading(true);
-        try {
-            const res = await fetch(`/api/agents/chat?action=get_messages&session_id=${id}`);
-            if (res.ok) {
-                const data = await res.json();
-                setMessages(data.messages || []);
-            }
-        } catch (error) {
-            console.error('Failed to load messages', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []); // Removed fetchSessions dependency
-
+    // Initial Load
     useEffect(() => {
-        if (sessionId) {
-            loadSessionMessages(sessionId);
-        }
-    }, [sessionId, loadSessionMessages]);
-
-    const handleSend = useCallback(async (prompt?: string) => {
-        const content = prompt || inputValue;
-        if (!content.trim()) return;
-
-        if (!prompt) setInputValue('');
-        setIsLoading(true);
-
-        const aiMsgId = Date.now();
-
-        // Optimistic UI update
-        setMessages(prev => [
-            ...prev,
-            {
-                id: Date.now() - 1,
-                sessionId: sessionId,
-                role: 'user',
-                content: content,
-                createdAt: new Date(),
-                metadata: null,
-                agentRunId: null,
-                referencedReportIds: null
-            },
-            {
-                id: aiMsgId,
-                sessionId: sessionId,
-                role: 'assistant',
-                content: '',
-                createdAt: new Date(),
-                metadata: null,
-                agentRunId: null,
-                referencedReportIds: null,
-                isStreaming: true
-            }
-        ]);
-
-        try {
-            const response = await fetch('/api/agents/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'send_message',
-                    session_id: sessionId,
-                    content: content
-                })
-            });
-
-            if (!response.ok) throw new Error('Failed to send message');
-            if (!response.body) throw new Error('No response body');
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let aiContent = '';
-            let buffer = '';
-
+        let isMounted = true;
+        async function load() {
             try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
-
-                    for (const line of lines) {
-                        if (!line.trim() || !line.startsWith('data: ')) continue;
-
-                        const data = line.slice(6).trim();
-                        if (data === '[DONE]') continue;
-
-                        try {
-                            const parsed = JSON.parse(data);
-                            if (parsed.text) {
-                                aiContent += parsed.text;
-                                setMessages(prev => prev.map(msg =>
-                                    msg.id === aiMsgId ? { ...msg, content: aiContent } : msg
-                                ));
-                            }
-                        } catch (e) {
-                            console.warn('Failed to parse stream chunk:', data);
-                        }
+                const res = await fetch(`/api/agents/chat?action=get_messages&session_id=${sessionId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (isMounted) {
+                        const mappedMessages = (data.messages || []).map((m: any) => ({
+                            id: m.id.toString(),
+                            role: m.role,
+                            content: m.content || '',
+                            createdAt: new Date(m.createdAt)
+                        }));
+                        setInitialMessages(mappedMessages);
+                        setMessages(mappedMessages);
                     }
                 }
-            } catch (readError) {
-                console.error('Stream reading failed:', readError);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (isMounted) setIsInitialLoading(false);
             }
-
-            setMessages(prev => prev.map(msg =>
-                msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
-            ));
-
-            // Note: We used to refresh sessions here, but now SWR handles it in the sidebar or we ignore it within this component.
-
-        } catch (error) {
-            console.error('Failed to send message', error);
-            setMessages(prev => [...prev, {
-                id: Date.now(),
-                sessionId: sessionId,
-                role: 'system',
-                content: 'Error: Failed to get response.',
-                createdAt: new Date(),
-                error: true
-            } as MessageWithStatus]);
-        } finally {
-            setIsLoading(false);
         }
-    }, [inputValue, isLoading, sessionId]); // Removed fetchSessions dependency
+        if (sessionId) load();
+        return () => { isMounted = false; };
+    }, [sessionId, setMessages]);
 
-    // Handle initial prompt from URL
+    // Handle initial prompt
     useEffect(() => {
-        // Only trigger if we have a prompt, haven't triggered yet, and messages are empty.
-        // We do NOT check !isLoading here to ensure it queues up immediately after mount/history-check.
-        // Actually, best to wait for hydration/mount.
-        if (initialPrompt && !hasTriggeredAutoSend.current && messages.length === 0) {
-            console.log('[Chat] Found initial prompt, triggering auto-send:', initialPrompt);
+        if (!isInitialLoading && initialPrompt && !hasTriggeredAutoSend.current && messages.length === 0) {
             hasTriggeredAutoSend.current = true;
-            // Removed router.replace to check if it interferes with state. 
-            // We can live with the dirty URL for now to ensure stability.
-            handleSend(initialPrompt);
+            append({
+                role: 'user',
+                content: initialPrompt,
+            });
         }
-    }, [initialPrompt, handleSend, messages.length]);
+    }, [isInitialLoading, initialPrompt, append, messages.length]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.nativeEvent.isComposing) return;
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSend();
+            if (input.trim() && !isLoading) {
+                const form = e.currentTarget.closest('form');
+                if (form) form.requestSubmit();
+            }
         }
     };
 
@@ -238,13 +136,20 @@ function ChatPageContent({ params }: ChatPageProps) {
                 {/* Chat Area - Open Flow */}
                 <div className="flex-1 w-full max-w-3xl mx-auto pb-36">
                     <div className="space-y-12">
-                        {messages.length === 0 && (
+                        {isInitialLoading && (
                             <div className="flex flex-col items-center justify-center space-y-4 py-20">
                                 <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
                             </div>
                         )}
 
-                        {messages.map((msg) => (
+                        {!isInitialLoading && messages.length === 0 && (
+                            <div className="flex flex-col items-center justify-center space-y-4 py-20 text-muted-foreground">
+                                No messages yet. Start a conversation!
+                            </div>
+                        )}
+
+
+                        {messages.map((msg, index) => (
                             <div
                                 key={msg.id}
                                 className={cn(
@@ -276,7 +181,7 @@ function ChatPageContent({ params }: ChatPageProps) {
                                                 {msg.role === 'user' ? 'You' : 'Surf AI'}
                                             </span>
                                             <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {msg.createdAt ? msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                             </span>
                                         </div>
                                         <div className={cn(
@@ -284,10 +189,59 @@ function ChatPageContent({ params }: ChatPageProps) {
                                             msg.role === 'user' ? "prose-p:m-0" : ""
                                         )}>
                                             {msg.content}
-                                            {msg.isStreaming && (
+                                            {isLoading && index === messages.length - 1 && msg.role === 'assistant' && !msg.toolInvocations && (
                                                 <span className="inline-block w-2 h-4 ml-1 align-middle bg-pink-500 animate-pulse" />
                                             )}
                                         </div>
+
+                                        {/* Tool Invocations (Part 2: Cards) */}
+                                        {msg.toolInvocations?.map((toolInvocation) => {
+                                            const { toolName, toolCallId, state } = toolInvocation;
+
+                                            if (state === 'result') {
+                                                // Since we are just displaying, we might only need 'call' state if we want to show it immediately? 
+                                                // Actually ai-sdk usually shows result when done.
+                                                // But for "generative UI" we often render on 'call' args too? 
+                                                // Let's assume the model calls it with args and we display it.
+                                                // Wait, streamText tools return a result. 
+                                                // But here the "tool" IS the display. The backend doesn't necessarily return a result 
+                                                // other than "displayed". So we should render based on 'args'.
+                                                const args = toolInvocation.args;
+
+                                                if (toolName === 'displayStockPrice') {
+                                                    return (
+                                                        <div key={toolCallId} className="mt-4">
+                                                            <StockPriceCard {...args} />
+                                                        </div>
+                                                    );
+                                                }
+                                                if (toolName === 'displayNews') {
+                                                    return (
+                                                        <div key={toolCallId} className="mt-4">
+                                                            <NewsCard {...args} />
+                                                        </div>
+                                                    );
+                                                }
+                                                if (toolName === 'displayFinancials') {
+                                                    return (
+                                                        <div key={toolCallId} className="mt-4">
+                                                            <FinancialsCard {...args} />
+                                                        </div>
+                                                    );
+                                                }
+                                            } else {
+                                                // Loading state for tools (optional)
+                                                return (
+                                                    <div key={toolCallId} className="mt-4">
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                            Generating {toolName}...
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -298,7 +252,10 @@ function ChatPageContent({ params }: ChatPageProps) {
 
                 {/* Input Card - Sticky Floating Card */}
                 <div className="sticky bottom-6 z-50 w-full px-4">
-                    <div className="max-w-2xl mx-auto relative flex flex-col gap-2 rounded-xl border border-black/5 bg-white/30 backdrop-blur-xl px-4 py-3.5 dark:border-white/5 dark:bg-[#121417]/30 shadow-2xl transition-shadow">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="max-w-2xl mx-auto relative flex flex-col gap-2 rounded-xl border border-black/5 bg-white/30 backdrop-blur-xl px-4 py-3.5 dark:border-white/5 dark:bg-[#121417]/30 shadow-2xl transition-shadow"
+                    >
                         <div className="hidden dark:block absolute -top-px left-0 z-10 h-px w-52 opacity-80"
                             style={{ background: 'linear-gradient(90deg, rgba(153,153,153,0) 0%, rgb(255,255,255) 50%, rgba(153,153,153,0) 100%)' }}
                         />
@@ -309,8 +266,8 @@ function ChatPageContent({ params }: ChatPageProps) {
                         <textarea
                             placeholder={t('inputPlaceholder')}
                             rows={1}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            value={input}
+                            onChange={handleInputChange}
                             onKeyDown={handleKeyDown}
                             disabled={isLoading}
                             className="w-full bg-transparent text-base text-foreground placeholder-muted-foreground focus:outline-none resize-none min-h-[50px] max-h-[200px] px-2"
@@ -322,12 +279,11 @@ function ChatPageContent({ params }: ChatPageProps) {
                             </div>
                             <div className="flex items-center gap-4">
                                 <button
-                                    type="button"
-                                    onClick={() => handleSend()}
-                                    disabled={!inputValue.trim() || isLoading}
+                                    type="submit"
+                                    disabled={!input.trim() || isLoading}
                                     className={cn(
                                         "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
-                                        inputValue.trim()
+                                        input.trim() && !isLoading
                                             ? "bg-pink-500 hover:bg-pink-600 text-white shadow-sm"
                                             : "bg-muted text-muted-foreground cursor-not-allowed"
                                     )}
@@ -336,7 +292,7 @@ function ChatPageContent({ params }: ChatPageProps) {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>

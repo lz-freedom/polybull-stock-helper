@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { routing, Locale } from '@/i18n/routing';
 import { Fira_Sans, Fira_Code } from 'next/font/google';
 import '../globals.css';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const firaSans = Fira_Sans({
     subsets: ['latin'],
@@ -46,7 +47,14 @@ export default async function LocaleLayout({
         <html lang={locale} suppressHydrationWarning>
             <body className={`min-h-screen bg-background font-sans antialiased ${firaSans.variable} ${firaCode.variable}`}>
                 <NextIntlClientProvider messages={messages}>
-                    {children}
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        {children}
+                    </ThemeProvider>
                 </NextIntlClientProvider>
             </body>
         </html>

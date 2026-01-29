@@ -9,52 +9,52 @@
 @variant dark (&:is(.dark *));
 
 @theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
 
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
+    --color-card: hsl(var(--card));
+    --color-card-foreground: hsl(var(--card-foreground));
 
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
+    --color-popover: hsl(var(--popover));
+    --color-popover-foreground: hsl(var(--popover-foreground));
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+    --color-primary: hsl(var(--primary));
+    --color-primary-foreground: hsl(var(--primary-foreground));
 
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-foreground: hsl(var(--secondary-foreground));
 
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
+    --color-muted: hsl(var(--muted));
+    --color-muted-foreground: hsl(var(--muted-foreground));
 
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+    --color-accent: hsl(var(--accent));
+    --color-accent-foreground: hsl(var(--accent-foreground));
 
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
+    --color-destructive: hsl(var(--destructive));
+    --color-destructive-foreground: hsl(var(--destructive-foreground));
 
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+    --color-border: hsl(var(--border));
+    --color-input: hsl(var(--input));
+    --color-ring: hsl(var(--ring));
 
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
+    --color-chart-1: hsl(var(--chart-1));
+    --color-chart-2: hsl(var(--chart-2));
+    --color-chart-3: hsl(var(--chart-3));
+    --color-chart-4: hsl(var(--chart-4));
+    --color-chart-5: hsl(var(--chart-5));
 
-  --color-sidebar: hsl(var(--sidebar-background));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
+    --color-sidebar: hsl(var(--sidebar-background));
+    --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+    --color-sidebar-primary: hsl(var(--sidebar-primary));
+    --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+    --color-sidebar-accent: hsl(var(--sidebar-accent));
+    --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+    --color-sidebar-border: hsl(var(--sidebar-border));
+    --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
 }
 
 /*
@@ -62,121 +62,146 @@
   so we've added these styles to maintain v3 behavior.
 */
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
+
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
 }
 
 @layer utilities {
-  body {
-    font-family: var(--font-fira-sans), "Lato", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-  .font-data, code, pre {
-    font-family: var(--font-fira-code), monospace;
-  }
-  .scrollbar-hide {
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .mask-edge-soft {
-    mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
-  }
+    body {
+        font-family: var(--font-fira-sans), "Lato", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .font-data,
+    code,
+    pre {
+        font-family: var(--font-fira-code), monospace;
+    }
+
+    .scrollbar-hide {
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mask-edge-soft {
+        mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+    }
 }
 
 /* PolyBull / Stock analytics palette - Light Mode */
 @layer base {
-  :root {
-    /* Primary Navy: #1E40AF */
-    --background: 210 40% 98%; /* #F8FAFC */
-    --foreground: 224 64% 33%; /* #1E3A8A */
-    --card: 0 0% 100%;
-    --card-foreground: 224 64% 33%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 64% 33%;
-    --primary: 226 71% 40%; /* #1E40AF */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 91% 60%; /* #3B82F6 */
-    --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 224 64% 33%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 38 92% 50%; /* #F59E0B Amber */
-    
-    /* Charts: Teal, Magenta, Amber, Slate, Cyan */
-    --chart-1: 173 80% 40%; /* Teal */
-    --chart-2: 309 83% 60%; /* Magenta */
-    --chart-3: 38 92% 50%; /* Amber */
-    --chart-4: 215 16% 47%; /* Slate */
-    --chart-5: 189 94% 43%; /* Cyan */
+    :root {
+        /* Primary Navy: #1E40AF */
+        --background: 210 40% 98%;
+        /* #F8FAFC */
+        --foreground: 224 64% 33%;
+        /* #1E3A8A */
+        --card: 0 0% 100%;
+        --card-foreground: 224 64% 33%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 224 64% 33%;
+        --primary: 226 71% 40%;
+        /* #1E40AF */
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217 91% 60%;
+        /* #3B82F6 */
+        --secondary-foreground: 0 0% 100%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 210 40% 96%;
+        --accent-foreground: 224 64% 33%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 226 71% 40%;
+        /* #1E40AF Blue */
 
-    --radius: 0.75rem;
+        /* Charts: Teal, Magenta, Amber, Slate, Cyan */
+        --chart-1: 173 80% 40%;
+        /* Teal */
+        --chart-2: 309 83% 60%;
+        /* Magenta */
+        --chart-3: 38 92% 50%;
+        /* Amber */
+        --chart-4: 215 16% 47%;
+        /* Slate */
+        --chart-5: 189 94% 43%;
+        /* Cyan */
 
-    --sidebar-background: 210 40% 98%;
-    --sidebar-foreground: 224 64% 33%;
-    --sidebar-primary: 226 71% 40%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 224 64% 33%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 38 92% 50%;
+        --radius: 0.75rem;
 
-    /* Marketing dot background (used as element background, not overlay) */
-    --marketing-dots-rgb: 33 33 33;
-    --marketing-dots-bg-rgb: 247 248 250;
-  }
+        --sidebar-background: 210 40% 98%;
+        --sidebar-foreground: 224 64% 33%;
+        --sidebar-primary: 226 71% 40%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 210 40% 96%;
+        --sidebar-accent-foreground: 224 64% 33%;
+        --sidebar-border: 214 32% 91%;
+        --sidebar-ring: 38 92% 50%;
 
-  /* PolyBull / Stock analytics palette - Dark Mode */
-  .dark {
-    --background: 222 47% 11%; /* #0F172A */
-    --foreground: 210 40% 98%; /* #F8FAFC */
-    --card: 217 33% 17%; /* #1E293B */
-    --card-foreground: 210 40% 98%;
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%; /* #3B82F6 Light Blue for contrast */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 215 28% 17%; /* Darker slate */
-    --secondary-foreground: 210 40% 98%;
-    --muted: 215 28% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 215 28% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 38 92% 50%; /* Amber */
-    
-    --chart-1: 173 80% 40%;
-    --chart-2: 309 83% 60%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 215 16% 47%;
-    --chart-5: 189 94% 43%;
+        /* Marketing dot background (used as element background, not overlay) */
+        --marketing-dots-rgb: 33 33 33;
+        --marketing-dots-bg-rgb: 247 248 250;
+    }
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 28% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 28% 17%;
-    --sidebar-ring: 38 92% 50%;
+    /* PolyBull / Stock analytics palette - Dark Mode */
+    .dark {
+        --background: 0 0% 6.3%;
+        /* #101010 */
+        --foreground: 0 0% 89%;
+        /* #e3e3e3 */
+        --card: 217 33% 17%;
+        /* #1E293B */
+        --card-foreground: 210 40% 98%;
+        --popover: 217 33% 17%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 217 91% 60%;
+        /* #3B82F6 Light Blue for contrast */
+        --primary-foreground: 0 0% 100%;
+        --secondary: 215 28% 17%;
+        /* Darker slate */
+        --secondary-foreground: 210 40% 98%;
+        --muted: 215 28% 17%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 215 28% 17%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62% 30%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 0 0% 13.7%;
+        /* #232323 */
+        --input: 215 28% 17%;
+        --ring: 217 91% 60%;
+        /* #3B82F6 Blue */
 
-    /* Marketing dot background (used as element background, not overlay) */
-    --marketing-dots-rgb: 255 255 255;
-    --marketing-dots-bg-rgb: 15 17 20;
-  }
+        --chart-1: 173 80% 40%;
+        --chart-2: 309 83% 60%;
+        --chart-3: 38 92% 50%;
+        --chart-4: 215 16% 47%;
+        --chart-5: 189 94% 43%;
+
+        --sidebar-background: 0 0% 9.8%;
+        /* #191919 */
+        --sidebar-foreground: 210 40% 98%;
+        --sidebar-primary: 217 91% 60%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 215 28% 17%;
+        --sidebar-accent-foreground: 210 40% 98%;
+        --sidebar-border: 215 28% 17%;
+        --sidebar-ring: 38 92% 50%;
+
+        /* Marketing dot background (used as element background, not overlay) */
+        --marketing-dots-rgb: 255 255 255;
+        --marketing-dots-bg-rgb: 15 17 20;
+    }
 }
 
 /* 
@@ -184,132 +209,135 @@
    or direct CSS variable usage without Tailwind @theme HSL transformation 
 */
 :root {
-  --background: hsl(210 40% 98%);
-  --foreground: hsl(224 64% 33%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(224 64% 33%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(224 64% 33%);
-  --primary: hsl(226 71% 40%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(217 91% 60%);
-  --secondary-foreground: hsl(0 0% 100%);
-  --muted: hsl(210 40% 96%);
-  --muted-foreground: hsl(215 16% 47%);
-  --accent: hsl(210 40% 96%);
-  --accent-foreground: hsl(224 64% 33%);
-  --destructive: hsl(0 84% 60%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(214 32% 91%);
-  --input: hsl(214 32% 91%);
-  --ring: hsl(38 92% 50%);
-  --chart-1: hsl(173 80% 40%);
-  --chart-2: hsl(309 83% 60%);
-  --chart-3: hsl(38 92% 50%);
-  --chart-4: hsl(215 16% 47%);
-  --chart-5: hsl(189 94% 43%);
-  --radius: 0.75rem;
+    --background: hsl(210 40% 98%);
+    --foreground: hsl(224 64% 33%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(224 64% 33%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(224 64% 33%);
+    --primary: hsl(226 71% 40%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(217 91% 60%);
+    --secondary-foreground: hsl(0 0% 100%);
+    --muted: hsl(210 40% 96%);
+    --muted-foreground: hsl(215 16% 47%);
+    --accent: hsl(210 40% 96%);
+    --accent-foreground: hsl(224 64% 33%);
+    --destructive: hsl(0 84% 60%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(214 32% 91%);
+    --input: hsl(214 32% 91%);
+    --ring: hsl(38 92% 50%);
+    --chart-1: hsl(173 80% 40%);
+    --chart-2: hsl(309 83% 60%);
+    --chart-3: hsl(38 92% 50%);
+    --chart-4: hsl(215 16% 47%);
+    --chart-5: hsl(189 94% 43%);
+    --radius: 0.75rem;
 }
 
 .dark {
-  --background: hsl(222 47% 11%);
-  --foreground: hsl(210 40% 98%);
-  --card: hsl(217 33% 17%);
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(217 33% 17%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(217 91% 60%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(215 28% 17%);
-  --secondary-foreground: hsl(210 40% 98%);
-  --muted: hsl(215 28% 17%);
-  --muted-foreground: hsl(215 20% 65%);
-  --accent: hsl(215 28% 17%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62% 30%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(215 28% 17%);
-  --input: hsl(215 28% 17%);
-  --ring: hsl(38 92% 50%);
-  --chart-1: hsl(173 80% 40%);
-  --chart-2: hsl(309 83% 60%);
-  --chart-3: hsl(38 92% 50%);
-  --chart-4: hsl(215 16% 47%);
-  --chart-5: hsl(189 94% 43%);
+    --background: hsl(0 0% 6.3%);
+    --foreground: hsl(0 0% 89%);
+    --card: hsl(217 33% 17%);
+    --card-foreground: hsl(210 40% 98%);
+    --popover: hsl(217 33% 17%);
+    --popover-foreground: hsl(210 40% 98%);
+    --primary: hsl(217 91% 60%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(215 28% 17%);
+    --secondary-foreground: hsl(210 40% 98%);
+    --muted: hsl(215 28% 17%);
+    --muted-foreground: hsl(215 20% 65%);
+    --accent: hsl(215 28% 17%);
+    --accent-foreground: hsl(210 40% 98%);
+    --destructive: hsl(0 62% 30%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(0 0% 13.7%);
+    --input: hsl(215 28% 17%);
+    --ring: hsl(38 92% 50%);
+    --chart-1: hsl(173 80% 40%);
+    --chart-2: hsl(309 83% 60%);
+    --chart-3: hsl(38 92% 50%);
+    --chart-4: hsl(215 16% 47%);
+    --chart-5: hsl(189 94% 43%);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
 }
 
 @keyframes ticker-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
 }
 
 .ticker-track {
-  animation: ticker-scroll 45s linear infinite;
+    animation: ticker-scroll 45s linear infinite;
 }
 
 .group:hover .ticker-track {
-  animation-play-state: paused;
+    animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ticker-track {
-    animation: none !important;
-  }
+    .ticker-track {
+        animation: none !important;
+    }
 }
 
 @keyframes infinite-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-33.33%);
-  }
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-33.33%);
+    }
 }
 
 .animate-infinite-scroll {
-  animation: infinite-scroll 25s linear infinite;
+    animation: infinite-scroll 25s linear infinite;
 }
