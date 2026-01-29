@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import logoImg from '@/assets/logo.png';
 
 interface LogoProps {
     showText?: boolean;
@@ -8,25 +9,25 @@ interface LogoProps {
 }
 
 const sizeMap = {
-    sm: { icon: 24, text: 'text-lg' },
-    md: { icon: 32, text: 'text-xl' },
-    lg: { icon: 40, text: 'text-2xl' },
+    sm: { icon: 24, text: 'text-xl' },
+    md: { icon: 32, text: 'text-2xl' },
+    lg: { icon: 40, text: 'text-3xl' },
 };
 
 export function Logo({ showText = true, size = 'md', variant = 'auto', className = '' }: LogoProps) {
     const { icon, text } = sizeMap[size];
-  
+
     // Use semantic color that adapts to theme
-    const textColor = variant === 'dark' 
-        ? 'text-white' 
-        : variant === 'light' 
-            ? 'text-foreground' 
+    const textColor = variant === 'dark'
+        ? 'text-white'
+        : variant === 'light'
+            ? 'text-foreground'
             : 'text-foreground';
 
     return (
         <div className={`flex items-center gap-2 ${className}`}>
             <Image
-                src="/logo.svg"
+                src={logoImg}
                 alt="iVibeFinance"
                 width={icon}
                 height={icon}

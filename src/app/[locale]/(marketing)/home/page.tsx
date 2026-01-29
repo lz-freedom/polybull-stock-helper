@@ -38,7 +38,7 @@ export default async function HomePage({ params }: HomePageProps) {
             <header className="fixed top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
                     <Link href={`/${locale}/home`}>
-                        <Logo size="md" variant="auto" />
+                        <Logo size="lg" variant="auto" />
                     </Link>
                     <div className="flex items-center gap-4 text-sm font-medium">
                         <LocaleSwitcher />
@@ -52,7 +52,7 @@ export default async function HomePage({ params }: HomePageProps) {
                 </div>
             </header>
 
-            <Hero 
+            <Hero
                 badge={marketing('hero.badge')}
                 headlineLeading={marketing('hero.headlineLeading')}
                 headlineHighlight={marketing('hero.headlineHighlight')}
@@ -63,23 +63,23 @@ export default async function HomePage({ params }: HomePageProps) {
                 locale={locale}
             />
 
-            <Ticker 
+            <Ticker
                 title={marketing('ticker.title')}
                 items={tickerItems}
             />
 
-            <PartnerMarquee 
+            <PartnerMarquee
                 title={marketing('partners.title')}
                 logos={partnerLogos}
             />
 
-            <Features 
+            <Features
                 title={marketing('features.title')}
                 subtitle={marketing('features.subtitle')}
                 items={featureItems}
             />
 
-            <LiveAnalysis 
+            <LiveAnalysis
                 title={marketing('live.title')}
                 insightTitle={marketing('live.insightTitle')}
                 insightBody={marketing('live.insightBody')}
@@ -89,19 +89,19 @@ export default async function HomePage({ params }: HomePageProps) {
                 events={liveEvents}
             />
 
-            <Markets 
+            <Markets
                 title={marketing('markets.title')}
                 subtitle={marketing('markets.subtitle')}
                 regions={marketRegions}
             />
 
-            <FAQ 
+            <FAQ
                 title={marketing('faq.title')}
                 subtitle={marketing('faq.subtitle')}
                 items={faqItems}
             />
 
-            <CTA 
+            <CTA
                 title={marketing('cta.title')}
                 subtitle={marketing('cta.subtitle')}
                 primaryText={marketing('cta.primary')}
