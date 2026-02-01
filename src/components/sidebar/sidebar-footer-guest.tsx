@@ -69,7 +69,7 @@ export function SidebarFooterGuest({
                                 </span>
                             </div>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground/60">
-                                {getThemeLabel(currentTheme)}
+                                {getThemeLabel(currentTheme || 'system')}
                                 <ChevronRight className="h-3 w-3" />
                             </div>
                         </Button>
@@ -138,8 +138,8 @@ export function SidebarFooterGuest({
                 onClick={onLoginClick}
                 variant="outline"
                 className={cn(
-                    "w-full rounded-sm h-11 border border-[#FF4F82] text-[#FF4F82] font-semibold bg-transparent hover:bg-[#FF4F82]/5 transition-all text-sm focus-visible:ring-0 focus-visible:ring-offset-0 shadow-[inset_0_0_0_1px_rgba(255,79,130,0.1)]",
-                    "dark:border-[#FF4F82] dark:text-[#FF6B95] dark:hover:bg-[#FF4F82]/10 dark:shadow-[inset_0_0_0_1px_rgba(255,107,149,0.1)]"
+                    "w-full rounded-md h-11 border border-[#EC4899] text-[#EC4899] font-semibold bg-transparent hover:bg-[#EC4899]/10 transition-all text-sm focus-visible:ring-0 focus-visible:ring-offset-0 shadow-sm",
+                    "dark:border-[#EC4899] dark:text-[#EC4899] dark:hover:bg-[#EC4899]/10"
                 )}
             >
                 {t('signInOrUp') || 'Log in or sign up'}

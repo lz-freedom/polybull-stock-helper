@@ -1,16 +1,13 @@
 import { Mastra } from '@mastra/core';
-import { PostgresStore } from '@mastra/pg';
 import { PinoLogger } from '@mastra/loggers';
 
 import { getModel, MODELS } from './providers/openrouter';
 import { qaAgent } from './agents/qa-agent';
 import { consensusWorkflow, researchWorkflow } from './workflows';
+import { storage } from './storage';
 
 export const mastra = new Mastra({
-    storage: new PostgresStore({
-        id: 'main-storage',
-        connectionString: process.env.POSTGRES_URL!,
-    }),
+    storage,
     agents: {
         qaAgent,
     },

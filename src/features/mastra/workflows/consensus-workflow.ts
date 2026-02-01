@@ -21,7 +21,13 @@ import {
     extractStockInfo,
     type FastFinanceResponse,
 } from '@/features/agents/lib/services/facts-snapshot-service';
-import { generateStructuredOutput, runParallelModels, MODELS } from '@/features/agents/lib/services/llm-client';
+import {
+    buildContextPack,
+    searchExa,
+    searchPerplexity,
+    type ContextPack,
+} from '@/features/agents/lib/services/context-pack';
+import { generateStructuredOutput, MODELS } from '@/features/agents/lib/services/llm-client';
 import { db } from '@/lib/db/drizzle';
 import {
     agentRunSteps,
@@ -60,9 +66,10 @@ const ConsensusWorkflowOutputSchema = z.object({
 type ConsensusWorkflowOutput = z.infer<typeof ConsensusWorkflowOutputSchema>;
 
 const ConsensusWorkflowStateSchema = z.object({
-    startedAtMs: z.number().int(),
+    startedAtMs: z.number().int().optional(),
     snapshot: z.unknown().optional(),
     snapshotDbId: z.number().int().optional(),
+    contextPack: z.unknown().optional(),
     modelAnalyses: z.unknown().optional(),
     report: z.unknown().optional(),
     reportDbId: z.number().int().optional(),
@@ -154,22 +161,164 @@ export const consensusWorkflow = createWorkflow({
                     status: AGENT_STEP_STATUS.RUNNING,
                 });
 
+                const snapshotCallId = `snapshot-${init.runDbId}-${Date.now()}`;
+                await emit(
+                    requestContext,
+                    createEvent('tool-call', {
+                        toolName: 'getStockSnapshot',
+                        callId: snapshotCallId,
+                        args: {
+                            stockSymbol: init.stockSymbol,
+                            exchangeAcronym: init.exchangeAcronym,
+                            forceRefresh: init.forceRefresh ?? false,
+                        },
+                    }),
+                );
+
                 const snapshot = await getOrFetchSnapshot(init.stockSymbol, init.exchangeAcronym, {
                     forceRefresh: init.forceRefresh,
                 });
+
+                await emit(
+                    requestContext,
+                    createEvent('tool-result', {
+                        callId: snapshotCallId,
+                        result: {
+                            snapshotId: snapshot.id,
+                            fetchedAt: snapshot.fetchedAt,
+                        },
+                    }),
+                );
 
                 await updateAgentRunStatus({
                     runDbId: init.runDbId,
                     status: AGENT_RUN_STATUS.RUNNING,
                     factsSnapshotId: snapshot.id,
                 });
+
+                const stockInfo = extractStockInfo(snapshot);
+                await emit(
+                    requestContext,
+                    createEvent('sources', {
+                        sources: [
+                            {
+                                title: `${stockInfo.symbol} snapshot`,
+                                url: `snapshot:${snapshot.id}`,
+                                sourceType: 'snapshot',
+                            },
+                        ],
+                    }),
+                );
+
+                const contextQuery = `${stockInfo.symbol} ${stockInfo.name ?? ''} analyst consensus outlook`;
+                const contextSources: ContextPack['sources'] = [];
+                const contextProviders: ContextPack['providers'] = {};
+                let contextPack: ContextPack | undefined;
+
+                if (process.env.EXA_API_KEY) {
+                    const exaCallId = `exa-${init.runDbId}-${Date.now()}`;
+                    await emit(
+                        requestContext,
+                        createEvent('tool-call', {
+                            toolName: 'exa.search',
+                            callId: exaCallId,
+                            args: { query: contextQuery },
+                        }),
+                    );
+                    try {
+                        const exaResult = await searchExa(contextQuery, { numResults: 6 });
+                        await emit(
+                            requestContext,
+                            createEvent('tool-result', {
+                                callId: exaCallId,
+                                result: {
+                                    count: exaResult?.sources.length ?? 0,
+                                    requestId: exaResult?.requestId,
+                                },
+                            }),
+                        );
+                        if (exaResult) {
+                            contextSources.push(...exaResult.sources);
+                            contextProviders.exa = {
+                                requestId: exaResult.requestId,
+                                resultCount: exaResult.sources.length,
+                                context: exaResult.context,
+                            };
+                        }
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : 'Exa search failed';
+                        await emit(
+                            requestContext,
+                            createEvent('error', {
+                                stepId: String(init.steps.fetchDataStepDbId),
+                                message,
+                                recoverable: true,
+                            }),
+                        );
+                    }
+                }
+
+                if (process.env.PERPLEXITY_API_KEY) {
+                    const pplxCallId = `pplx-${init.runDbId}-${Date.now()}`;
+                    await emit(
+                        requestContext,
+                        createEvent('tool-call', {
+                            toolName: 'perplexity.search',
+                            callId: pplxCallId,
+                            args: { query: contextQuery },
+                        }),
+                    );
+                    try {
+                        const pplxResult = await searchPerplexity(contextQuery, { maxResults: 6 });
+                        await emit(
+                            requestContext,
+                            createEvent('tool-result', {
+                                callId: pplxCallId,
+                                result: {
+                                    count: pplxResult?.sources.length ?? 0,
+                                    id: pplxResult?.id,
+                                },
+                            }),
+                        );
+                        if (pplxResult) {
+                            contextSources.push(...pplxResult.sources);
+                            contextProviders.perplexity = {
+                                id: pplxResult.id,
+                                resultCount: pplxResult.sources.length,
+                            };
+                        }
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : 'Perplexity search failed';
+                        await emit(
+                            requestContext,
+                            createEvent('error', {
+                                stepId: String(init.steps.fetchDataStepDbId),
+                                message,
+                                recoverable: true,
+                            }),
+                        );
+                    }
+                }
+
+                if (contextSources.length > 0) {
+                    contextPack = buildContextPack({
+                        query: contextQuery,
+                        sources: contextSources,
+                        providers: contextProviders,
+                    });
+                    await emit(
+                        requestContext,
+                        createEvent('sources', {
+                            sources: contextPack.sources,
+                        }),
+                    );
+                }
+
                 await updateAgentRunStepStatus({
                     stepDbId: init.steps.fetchDataStepDbId,
                     status: AGENT_STEP_STATUS.COMPLETED,
-                    output: { snapshotId: snapshot.id },
+                    output: { snapshotId: snapshot.id, contextPack },
                 });
-
-                const stockInfo = extractStockInfo(snapshot);
                 await emit(
                     requestContext,
                     createEvent('artifact', {
@@ -200,6 +349,7 @@ export const consensusWorkflow = createWorkflow({
                     ...state,
                     snapshot,
                     snapshotDbId: snapshot.id,
+                    contextPack,
                 });
 
                 return {};
@@ -248,15 +398,60 @@ export const consensusWorkflow = createWorkflow({
                 const analysisPrompt = buildConsensusAnalysisPrompt(snapshot);
                 const models = [...CONSENSUS_ANALYSIS_MODELS].sort();
 
-                // 并行调用多个模型进行分析，配置超时和重试策略
-                const modelResults = await runParallelModels(ModelAnalysisSchema, 
-                    models.map((modelId) => ({
-                        modelId,
-                        prompt: analysisPrompt,
-                        system: CONSENSUS_ANALYSIS_SYSTEM_PROMPT,
-                        temperature: 0.7,
-                    })),
-                    { timeout: 600000, maxRetries: 3 },
+                await emit(
+                    requestContext,
+                    createEvent('branch-status', {
+                        branches: models.map((modelId) => ({
+                            id: modelId,
+                            status: 'pending',
+                        })),
+                    }),
+                );
+
+                // 并行调用多个模型进行分析，配置超时和重试策略 + 分支状态
+                const modelResults = await Promise.all(
+                    models.map(async (modelId) => {
+                        const startedAt = Date.now();
+                        await emit(
+                            requestContext,
+                            createEvent('branch-status', {
+                                branches: [{ id: modelId, status: 'running' }],
+                            }),
+                        );
+
+                        try {
+                            const result = await generateStructuredOutput(ModelAnalysisSchema, analysisPrompt, {
+                                modelId,
+                                system: CONSENSUS_ANALYSIS_SYSTEM_PROMPT,
+                                temperature: 0.7,
+                                timeout: 600000,
+                                maxRetries: 3,
+                            });
+                            const durationMs = Date.now() - startedAt;
+                            await emit(
+                                requestContext,
+                                createEvent('branch-status', {
+                                    branches: [{ id: modelId, status: 'completed', durationMs }],
+                                }),
+                            );
+                            return { modelId, result, durationMs };
+                        } catch (error) {
+                            const durationMs = Date.now() - startedAt;
+                            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                            await emit(
+                                requestContext,
+                                createEvent('branch-status', {
+                                    branches: [{ id: modelId, status: 'failed', durationMs }],
+                                }),
+                            );
+                            return {
+                                modelId,
+                                result: null as unknown as ModelAnalysis,
+                                error: errorMessage,
+                                durationMs,
+                            };
+                        }
+                    }),
                 );
 
                 // 过滤有效分析结果
@@ -270,6 +465,16 @@ export const consensusWorkflow = createWorkflow({
                     throw new Error('Insufficient valid analyses for consensus: need at least 2 models');
                 }
 
+                await emit(
+                    requestContext,
+                    createEvent('sources', {
+                        sources: validAnalyses.map((analysis) => ({
+                            title: `${analysis.modelId} analysis`,
+                            sourceType: 'model',
+                        })),
+                    }),
+                );
+
                 await updateAgentRunStepStatus({
                     stepDbId: init.steps.parallelAnalysisStepDbId,
                     status: AGENT_STEP_STATUS.COMPLETED,
@@ -282,6 +487,10 @@ export const consensusWorkflow = createWorkflow({
                         failures: modelResults
                             .filter((r) => r.error)
                             .map((r) => ({ modelId: r.modelId, error: r.error })),
+                        durations: modelResults.map((r) => ({
+                            modelId: r.modelId,
+                            durationMs: r.durationMs,
+                        })),
                     },
                 });
 
@@ -328,6 +537,7 @@ export const consensusWorkflow = createWorkflow({
                 const init = getInitData<ConsensusWorkflowInput>();
                 const snapshot = toFactsSnapshot(state.snapshot);
                 const modelAnalyses = toModelAnalyses(state.modelAnalyses);
+                const contextPack = state.contextPack;
 
                 await emit(
                     requestContext,
@@ -387,6 +597,7 @@ export const consensusWorkflow = createWorkflow({
                         sources: {
                             snapshot: state.snapshotDbId,
                             models: modelAnalyses.map((a) => a.modelId),
+                            contextPack: contextPack ?? null,
                         },
                     })
                     .returning();
@@ -462,7 +673,7 @@ export const consensusWorkflow = createWorkflow({
                     }),
                 );
 
-                const duration = Date.now() - state.startedAtMs;
+                const duration = Date.now() - (state.startedAtMs ?? Date.now());
                 const resultPayload = {
                     runDbId: init.runDbId,
                     reportDbId: createdReport.id,

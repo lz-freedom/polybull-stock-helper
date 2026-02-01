@@ -97,6 +97,44 @@ export const ToolResultEventSchema = z.object({
 export type ToolResultEvent = z.infer<typeof ToolResultEventSchema>;
 
 /**
+ * 来源事件 - 引用来源清单
+ */
+export const SourcesEventSchema = z.object({
+    type: z.literal('sources'),
+    sources: z
+        .array(
+            z.object({
+                title: z.string().optional(),
+                url: z.string().optional(),
+                sourceType: z.string().optional(),
+            }),
+        )
+        .optional(),
+    timestamp: z.number(),
+});
+
+export type SourcesEvent = z.infer<typeof SourcesEventSchema>;
+
+/**
+ * 分支状态事件 - 并行分支执行状态
+ */
+export const BranchStatusEventSchema = z.object({
+    type: z.literal('branch-status'),
+    branches: z
+        .array(
+            z.object({
+                id: z.string().optional(),
+                status: z.string().optional(),
+                durationMs: z.number().optional(),
+            }),
+        )
+        .optional(),
+    timestamp: z.number(),
+});
+
+export type BranchStatusEvent = z.infer<typeof BranchStatusEventSchema>;
+
+/**
  * 错误事件
  */
 export const ErrorEventSchema = z.object({
@@ -144,6 +182,8 @@ export const WorkflowEventSchema = z.discriminatedUnion('type', [
     DivergenceEventSchema,
     ToolCallEventSchema,
     ToolResultEventSchema,
+    SourcesEventSchema,
+    BranchStatusEventSchema,
     ErrorEventSchema,
     CompleteEventSchema,
     ThinkingEventSchema,

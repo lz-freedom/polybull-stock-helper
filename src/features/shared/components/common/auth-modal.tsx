@@ -152,7 +152,7 @@ export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
                             <button
                                 onClick={handleSubmitEmail}
                                 disabled={!email || isLoading}
-                                className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1 whitespace-nowrap outline-none transition-all duration-300 ease-in-out h-[46px] px-6 py-3 text-sm font-medium leading-[22px] w-full rounded-md disabled:pointer-events-none disabled:opacity-50 bg-[#BE185D] hover:bg-[#9D174D] text-white shadow-sm"
+                                className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1 whitespace-nowrap outline-none transition-all duration-300 ease-in-out h-[46px] px-6 py-3 text-sm font-medium leading-[22px] w-full rounded-md disabled:pointer-events-none disabled:opacity-50 bg-[#EC4899] hover:bg-[#BE185D] text-white shadow-sm"
                             >
                                 {isLoading ? <Loader2 className="animate-spin size-4" /> : t('continue')}
                             </button>
@@ -186,12 +186,12 @@ export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
                             </button>
 
                             {/* Terms */}
-                            <p className="text-muted-foreground text-center text-xs mt-2">
-                                *{t('agreeText')}{' '}
-                                <Link href="#" className="text-[#BE185D] hover:underline hover:text-[#9D174D]">{t('privacyPolicy')}</Link>
+                            <div className="text-muted-foreground text-center text-[10px] mt-2 leading-tight">
+                                {t('agreeText')}{' '}
+                                <Link href="/privacy" className="text-[#BE185D] hover:underline hover:text-[#9D174D]">{t('privacyPolicy')}</Link>
                                 {' '}&{' '}
-                                <Link href="#" className="text-[#BE185D] hover:underline hover:text-[#9D174D]">{t('termsOfService')}</Link>
-                            </p>
+                                <Link href="/terms" className="text-[#BE185D] hover:underline hover:text-[#9D174D]">{t('termsOfService')}</Link>
+                            </div>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-6 items-center justify-center py-4">

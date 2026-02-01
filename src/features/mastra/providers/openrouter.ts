@@ -39,7 +39,7 @@ export type ModelId = (typeof MODELS)[keyof typeof MODELS];
  * @returns AI SDK 兼容的模型实例
  */
 export function getModel(modelId: ModelId = MODELS.DEFAULT) {
-    return openrouter(modelId);
+    return openrouter.chat(modelId);
 }
 
 /**

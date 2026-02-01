@@ -23,6 +23,11 @@ export async function extractStockInfoFromText(text: string) {
       3. If it's a crypto (e.g., "Bitcoin", "BTC"), set isCrypto to true.
       4. If NO stock/crypto is found, return null for symbol.`,
       prompt: text,
+      providerOptions: {
+        openai: {
+          store: false,
+        },
+      },
     });
     
     return object;

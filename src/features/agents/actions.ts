@@ -112,12 +112,13 @@ const sendMessageSchema = z.object({
 
 export const sendChatMessageAction = validatedActionWithUser(
     sendMessageSchema,
-    async (data) => {
+    async (data, formData, user) => {
         try {
             const result = await sendChatMessage({
                 sessionId: data.sessionId,
                 content: data.content,
                 forceDataRefresh: data.forceDataRefresh,
+                userId: user.id,
             });
 
             return {
@@ -147,7 +148,6 @@ export const refreshChatData = validatedActionWithUser(
             return {
                 success: 'Data refreshed',
                 snapshotId: result.snapshot.id,
-                agentRunId: result.agentRunId,
             };
         } catch (error) {
             return {

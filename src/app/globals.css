@@ -55,6 +55,8 @@
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+
+    --color-content: hsl(var(--content-background));
 }
 
 /*
@@ -139,18 +141,26 @@
 
         --radius: 0.75rem;
 
-        --sidebar-background: 210 40% 98%;
+
+        --sidebar-background: 0 0% 95.7%;
+        /* #f4f4f4 */
         --sidebar-foreground: 224 64% 33%;
         --sidebar-primary: 226 71% 40%;
         --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 210 40% 96%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 0 0% 91%;
+        /* #e8e8e8 */
         --sidebar-accent-foreground: 224 64% 33%;
         --sidebar-border: 214 32% 91%;
         --sidebar-ring: 38 92% 50%;
 
+
+        --content-background: 0 0% 99%;
+        /* #fcfcfc */
+
         /* Marketing dot background (used as element background, not overlay) */
         --marketing-dots-rgb: 33 33 33;
-        --marketing-dots-bg-rgb: 247 248 250;
+        --marketing-dots-bg-rgb: 252 252 252;
     }
 
     /* PolyBull / Stock analytics palette - Dark Mode */
@@ -201,6 +211,9 @@
         /* Marketing dot background (used as element background, not overlay) */
         --marketing-dots-rgb: 255 255 255;
         --marketing-dots-bg-rgb: 15 17 20;
+
+        --content-background: 216 14% 7%;
+        /* #0F1114 */
     }
 }
 
@@ -292,6 +305,7 @@
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
+    --color-content: var(--content-background);
 }
 
 @layer base {

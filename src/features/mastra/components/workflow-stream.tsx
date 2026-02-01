@@ -1,26 +1,24 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import type { DataMessagePart } from '@assistant-ui/react';
 import { WorkflowEvent, parseEvent } from '../events/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { DataPartList } from '@/components/assistant-ui/data-parts';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@features/shared/lib/utils';
 import { 
     Loader2, 
     Play, 
-    AlertTriangle, 
     CheckCircle, 
     XCircle, 
-    ChevronRight, 
-    ChevronDown, 
     Brain, 
     FileText,
-    Activity,
-    GitBranch
+    Activity
 } from 'lucide-react';
 
 interface WorkflowStreamProps {
@@ -36,7 +34,15 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
     const [events, setEvents] = useState<WorkflowEvent[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [finalResult, setFinalResult] = useState<unknown | null>(null);
-    const [expandedArtifacts, setExpandedArtifacts] = useState<Record<string, boolean>>({});
+    const dataParts = useMemo(
+        () =>
+            events.map((event) => ({
+                type: 'data' as const,
+                name: event.type,
+                data: event,
+            })) as DataMessagePart[],
+        [events],
+    );
     
     const streamEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -54,7 +60,6 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
         setError(null);
         setFinalResult(null);
         setIsRunning(true);
-        setExpandedArtifacts({});
 
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -136,12 +141,6 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
         }
     };
 
-    const toggleArtifact = (id: string) => {
-        setExpandedArtifacts(prev => ({
-            ...prev,
-            [id]: !prev[id]
-        }));
-    };
 
     return (
         <div className={cn('grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-100px)]', className)}>
@@ -283,121 +282,7 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
                             </div>
                         )}
                         
-                        {events.map((event, index) => {
-                            const time = new Date(event.timestamp).toLocaleTimeString();
-                            
-                            if (event.type === 'stage') {
-                                return (
-                                    <div key={index} className="flex items-center gap-3 py-2 border-b border-border/50">
-                                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
-                                            STAGE
-                                        </Badge>
-                                        <span className="font-medium text-sm">{event.stage}</span>
-                                        <span className="ml-auto text-xs text-muted-foreground">{time}</span>
-                                    </div>
-                                );
-                            }
-
-                            if (event.type === 'progress') {
-                                return (
-                                    <div key={index} className="pl-4 border-l-2 border-muted py-1">
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span>{event.stepId}</span>
-                                            <span className="text-muted-foreground">{event.percent}%</span>
-                                        </div>
-                                        <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                                            <div 
-                                                className="h-full bg-orange-500 transition-all duration-300"
-                                                style={{ width: `${event.percent}%` }}
-                                            />
-                                        </div>
-                                        {event.message && (
-                                            <p className="text-xs text-muted-foreground mt-1">{event.message}</p>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            if (event.type === 'tool-call') {
-                                return (
-                                    <div key={index} className="pl-4 border-l-2 border-indigo-200 py-1 bg-indigo-50 dark:bg-indigo-950 rounded-r text-sm">
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="text-[10px] h-5 border-indigo-200 text-indigo-700">TOOL</Badge>
-                                            <span className="font-mono text-xs">{event.toolName}</span>
-                                        </div>
-                                        <div className="mt-1 text-xs text-muted-foreground truncate font-mono opacity-70">
-                                            {JSON.stringify(event.args)}
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            if (event.type === 'divergence') {
-                                return (
-                                    <div key={index} className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 rounded-lg">
-                                        <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium text-sm mb-2">
-                                            <GitBranch className="h-4 w-4" />
-                                            <span>Divergence: {event.topic}</span>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {event.views.map((view, vIndex) => (
-                                                <div key={vIndex} className="text-xs bg-white dark:bg-slate-950 p-2 rounded border border-amber-100 dark:border-amber-900">
-                                                    <div className="flex justify-between font-semibold mb-1">
-                                                        <span>{view.analyst}</span>
-                                                        <Badge variant={view.stance === 'bullish' ? 'default' : view.stance === 'bearish' ? 'destructive' : 'secondary'} className="text-[10px] py-0 h-4">
-                                                            {view.stance}
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="text-muted-foreground">{view.reasoning}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            if (event.type === 'artifact') {
-                                const id = event.stepId + event.timestamp;
-                                const isExpanded = expandedArtifacts[id];
-                                return (
-                                    <div key={index} className="border rounded-lg bg-card overflow-hidden">
-                                        <button 
-                                            onClick={() => toggleArtifact(id)}
-                                            className="w-full flex items-center justify-between p-3 text-sm font-medium hover:bg-muted/50 transition-colors"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                                <span className="capitalize">{event.artifactType}</span>
-                                            </div>
-                                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                        </button>
-                                        {isExpanded && (
-                                            <div className="p-3 border-t bg-muted overflow-x-auto">
-                                                <pre className="text-xs font-mono whitespace-pre-wrap">
-                                                    {typeof event.data === 'string' 
-                                                        ? event.data 
-                                                        : JSON.stringify(event.data, null, 2)}
-                                                </pre>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            if (event.type === 'error') {
-                                return (
-                                    <div key={index} className="p-3 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 rounded-lg text-sm flex items-start gap-2">
-                                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                                        <div>
-                                            <p className="font-semibold">Error</p>
-                                            <p>{event.message}</p>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            return null;
-                        })}
+                        <DataPartList parts={dataParts} />
                         <div ref={streamEndRef} />
                     </div>
                 </CardContent>

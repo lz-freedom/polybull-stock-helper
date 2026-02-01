@@ -1,69 +1,18 @@
+import { eq, desc, and } from 'drizzle-orm';
+
+import { extractStockInfoFromText } from '@/features/agents/actions/extract';
+import { mastra } from '@/features/mastra';
 import { db } from '@/lib/db/drizzle';
 import {
     chatSessions,
     chatMessages,
-    agentRuns,
-    reports,
-    AGENT_TYPES,
-    AGENT_RUN_STATUS,
     type ChatSession,
     type ChatMessage,
     type FactsSnapshot,
 } from '@/lib/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
-import { z } from 'zod';
-import { createTextStream, MODELS, type ModelId } from '../services/llm-client';
 import {
     getOrFetchSnapshot,
-    extractStockInfo,
-    extractLatestFinancials,
-    extractRecentNews,
 } from '../services/facts-snapshot-service';
-
-const QA_SYSTEM_PROMPT = `You are a helpful financial assistant specializing in stock analysis.
-You have access to real-time financial data and can provide insights based on facts.
-Be concise but thorough. Cite specific data points when available.
-If you don't have enough information to answer confidently, say so.`;
-
-function buildContextFromSnapshot(snapshot: FactsSnapshot): string {
-    const stockInfo = extractStockInfo(snapshot);
-    const financials = extractLatestFinancials(snapshot);
-    const news = extractRecentNews(snapshot, 5);
-
-    return `## Current Data for ${stockInfo.symbol} (${stockInfo.name ?? 'Unknown'})
-Sector: ${stockInfo.sector ?? 'N/A'} | Industry: ${stockInfo.industry ?? 'N/A'}
-Market Cap: ${stockInfo.marketCap ? `$${(stockInfo.marketCap / 1e9).toFixed(2)}B` : 'N/A'}
-
-### Financial Highlights
-- Annual Revenue: ${financials.annualRevenue ? `$${(financials.annualRevenue / 1e9).toFixed(2)}B` : 'N/A'}
-- Net Income: ${financials.annualNetIncome ? `$${(financials.annualNetIncome / 1e9).toFixed(2)}B` : 'N/A'}
-- Total Assets: ${financials.totalAssets ? `$${(financials.totalAssets / 1e9).toFixed(2)}B` : 'N/A'}
-- Free Cash Flow: ${financials.freeCashFlow ? `$${(financials.freeCashFlow / 1e9).toFixed(2)}B` : 'N/A'}
-
-### Recent News
-${news.map((n) => `- ${n.title ?? 'No title'}`).join('\n')}
-
-Data fetched at: ${snapshot.fetchedAt.toISOString()}`;
-}
-
-function buildConversationPrompt(
-    messages: Array<{ role: string; content: string }>,
-    context: string,
-    referencedReports?: string[],
-): string {
-    let prompt = `${context}\n\n`;
-
-    if (referencedReports && referencedReports.length > 0) {
-        prompt += `## Referenced Reports\n${referencedReports.join('\n\n')}\n\n`;
-    }
-
-    prompt += '## Conversation\n';
-    for (const msg of messages) {
-        prompt += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n`;
-    }
-
-    return prompt;
-}
 
 export interface CreateSessionInput {
     id?: string;
@@ -127,166 +76,11 @@ export async function getUserSessions(
         .limit(limit);
 }
 
-export interface SendMessageInput {
-    sessionId: string;
-    content: string;
-    userId?: number;
-    referencedReportIds?: number[];
-    forceDataRefresh?: boolean;
-}
-
-export interface SendMessageResult {
-    userMessage: ChatMessage;
-    assistantMessage: ChatMessage;
-    result: any; // Using any to avoid circular dependency or complex type imports from ai-sdk, or strictly: Awaited<ReturnType<typeof streamText>>
-}
-
-export async function sendMessage(
-    input: SendMessageInput,
-): Promise<SendMessageResult> {
-    let session = await getChatSession(input.sessionId);
-
-    // Auto-create session if it doesn't exist (handles race conditions from frontend)
-    if (!session) {
-        session = await createChatSession({
-            id: input.sessionId,
-            userId: input.userId,
-            title: input.content.slice(0, 50) || 'New Chat',
-            stockSymbol: undefined,
-            exchangeAcronym: undefined,
-        });
-    }
-
-    const [userMessage] = await db
-        .insert(chatMessages)
-        .values({
-            sessionId: input.sessionId,
-            role: 'user',
-            content: input.content,
-            referencedReportIds: input.referencedReportIds,
-        })
-        .returning();
-
-    const previousMessages = await getChatMessages(input.sessionId, 20);
-
-    let context = '';
-    let snapshot: FactsSnapshot | null = null;
-
-    if (session.stock_symbol && session.exchange_acronym) {
-        snapshot = await getOrFetchSnapshot(
-            session.stock_symbol,
-            session.exchange_acronym,
-            { forceRefresh: input.forceDataRefresh },
-        );
-        context = buildContextFromSnapshot(snapshot);
-    }
-
-    let referencedReportSummaries: string[] = [];
-    if (input.referencedReportIds && input.referencedReportIds.length > 0) {
-        const referencedReports = await db
-            .select()
-            .from(reports)
-            .where(
-                eq(reports.id, input.referencedReportIds[0]),
-            );
-
-        referencedReportSummaries = referencedReports.map(
-            (r) => `**${r.title ?? 'Report'}**: ${r.summary ?? 'No summary'}`,
-        );
-    }
-
-    const conversationHistory = previousMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-    }));
-
-    conversationHistory.push({ role: 'user', content: input.content });
-
-    const prompt = buildConversationPrompt(
-        conversationHistory,
-        context,
-        referencedReportSummaries,
-    );
-
-    const [assistantMessage] = await db
-        .insert(chatMessages)
-        .values({
-            sessionId: input.sessionId,
-            role: 'assistant',
-            content: '',
-        })
-        .returning();
-
-    const tools = {
-        displayStockPrice: {
-            description: 'Display a stock price card with current price, change, and market cap.',
-            parameters: z.object({
-                symbol: z.string(),
-                price: z.number(),
-                change: z.number(),
-                changePercent: z.number(),
-                currency: z.string().optional(),
-                marketCap: z.string().optional(),
-                high: z.number().optional(),
-                low: z.number().optional(),
-            }),
-            execute: async (args: any) => args,
-        },
-        displayNews: {
-            description: 'Display a list of recent news articles.',
-            parameters: z.object({
-                symbol: z.string(),
-                news: z.array(z.object({
-                    title: z.string(),
-                    source: z.string(),
-                    url: z.string(),
-                    publishedAt: z.string(),
-                })),
-            }),
-            execute: async (args: any) => args,
-        },
-        displayFinancials: {
-            description: 'Display a table of key financial metrics.',
-            parameters: z.object({
-                symbol: z.string(),
-                metrics: z.array(z.object({
-                    label: z.string(),
-                    value: z.union([z.string(), z.number()]),
-                    period: z.string().optional(),
-                })),
-            }),
-            execute: async (args: any) => args,
-        },
-    };
-
-    const streamResult = createTextStream(prompt, {
-        modelId: MODELS.DEFAULT,
-        system: QA_SYSTEM_PROMPT + "\n\nYou can use tools to display data cards to the user. When you mention stock prices, news, or financials, ALWAYS call the corresponding tool to show a visual card in addition to your text response.",
-        temperature: 0.7,
-        onFinish: async (text) => {
-            await db
-                .update(chatMessages)
-                .set({ content: text })
-                .where(eq(chatMessages.id, assistantMessage.id));
-
-            await db
-                .update(chatSessions)
-                .set({ updatedAt: new Date() })
-                .where(eq(chatSessions.id, input.sessionId));
-        },
-        tools,
-    });
-
-    return {
-        userMessage,
-        assistantMessage,
-        result: streamResult,
-    };
-}
-
+// Deprecated in favor of Mastra memory, but kept for legacy route compatibility if needed
+// or we should update route.ts to not use this.
+// For now, restoring a minimal version to satisfy imports.
 export async function refreshSessionData(sessionId: string): Promise<{
     snapshot: FactsSnapshot;
-    agentRunId: number;
 }> {
     const session = await getChatSession(sessionId);
     if (!session) {
@@ -303,33 +97,7 @@ export async function refreshSessionData(sessionId: string): Promise<{
         { forceRefresh: true },
     );
 
-    const [run] = await db
-        .insert(agentRuns)
-        .values({
-            userId: session.userId ?? undefined,
-            agentType: AGENT_TYPES.QA,
-            status: AGENT_RUN_STATUS.COMPLETED,
-            input: {
-                action: 'refresh_data',
-                sessionId,
-                stockSymbol: session.stock_symbol,
-                exchangeAcronym: session.exchange_acronym,
-            },
-            output: { snapshotId: snapshot.id },
-            factsSnapshotId: snapshot.id,
-            startedAt: new Date(),
-            completedAt: new Date(),
-        })
-        .returning();
-
-    await db.insert(chatMessages).values({
-        sessionId,
-        role: 'system',
-        content: `Data refreshed for ${session.stock_symbol}. Latest data as of ${snapshot.fetchedAt.toISOString()}.`,
-        agentRunId: run.id,
-    });
-
-    return { snapshot, agentRunId: run.id };
+    return { snapshot };
 }
 
 export async function archiveSession(sessionId: string): Promise<void> {
@@ -347,4 +115,158 @@ export async function updateSessionTitle(
         .update(chatSessions)
         .set({ title, updatedAt: new Date() })
         .where(eq(chatSessions.id, sessionId));
+}
+
+export async function updateSessionStock(
+    sessionId: string,
+    stockSymbol: string,
+    exchangeAcronym?: string | null,
+): Promise<void> {
+    await db
+        .update(chatSessions)
+        .set({
+            stock_symbol: stockSymbol,
+            exchange_acronym: exchangeAcronym ?? null,
+            updatedAt: new Date(),
+        })
+        .where(eq(chatSessions.id, sessionId));
+}
+
+export async function sendMessage(input: {
+    sessionId: string;
+    content: string;
+    forceDataRefresh?: boolean;
+    userId?: number;
+}): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage }> {
+    const session = await getChatSession(input.sessionId);
+    if (!session) {
+        throw new Error(`Session ${input.sessionId} not found`);
+    }
+    if (input.userId && session.userId && session.userId !== input.userId) {
+        throw new Error('Session access denied');
+    }
+    if (input.userId && !session.userId) {
+        await db
+            .update(chatSessions)
+            .set({ userId: input.userId })
+            .where(eq(chatSessions.id, session.id));
+    }
+
+    const [userMessage] = await db
+        .insert(chatMessages)
+        .values({
+            sessionId: input.sessionId,
+            role: 'user',
+            content: input.content,
+            metadata: {
+                source: 'mastra-action',
+                forceDataRefresh: input.forceDataRefresh ?? false,
+            },
+        })
+        .returning();
+
+    const [assistantMessage] = await db
+        .insert(chatMessages)
+        .values({
+            sessionId: input.sessionId,
+            role: 'assistant',
+            content: '',
+            metadata: {
+                source: 'mastra-action',
+                status: 'pending',
+            },
+        })
+        .returning();
+
+    const agent = mastra.getAgent('qaAgent');
+    const memory = {
+        thread: { id: input.sessionId },
+        resource: input.userId ? String(input.userId) : input.sessionId,
+    };
+    const system = input.forceDataRefresh
+        ? 'When calling getStockSnapshot, always set forceRefresh=true for this run.'
+        : undefined;
+
+    let detectedSymbol = session.stock_symbol ?? undefined;
+    let detectedExchange = session.exchange_acronym ?? undefined;
+
+    if (!detectedSymbol) {
+        const extracted = await extractStockInfoFromText(input.content);
+        if (extracted?.symbol) {
+            detectedSymbol = extracted.symbol;
+            detectedExchange = extracted.exchange ?? undefined;
+            await updateSessionStock(input.sessionId, extracted.symbol, detectedExchange);
+        }
+    }
+
+    let updatedAssistantMessage = assistantMessage;
+    try {
+        const result = await agent.generate(input.content, {
+            memory,
+            ...(system ? { system } : {}),
+            ...(detectedSymbol
+                ? {
+                      context: [
+                          {
+                              role: 'system',
+                              content: `Detected stock for this thread: ${detectedSymbol}${
+                                  detectedExchange ? ` (${detectedExchange})` : ''
+                              }. If you need current data, call getStockSnapshot first, then summarize the key takeaways.`,
+                          },
+                      ],
+                  }
+                : {}),
+            providerOptions: {
+                openai: {
+                    store: false,
+                },
+            },
+        });
+
+        const metadata = {
+            source: 'mastra-action',
+            status: 'finished' as const,
+            ...(result.runId ? { runId: result.runId } : {}),
+            ...(result.toolCalls?.length ? { toolCalls: result.toolCalls } : {}),
+            ...(result.toolResults?.length ? { toolResults: result.toolResults } : {}),
+            ...(result.sources?.length ? { sources: result.sources } : {}),
+        };
+
+        const [updated] = await db
+            .update(chatMessages)
+            .set({
+                content: result.text,
+                metadata,
+            })
+            .where(eq(chatMessages.id, assistantMessage.id))
+            .returning();
+
+        if (updated) {
+            updatedAssistantMessage = updated;
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to generate response';
+        await db
+            .update(chatMessages)
+            .set({
+                metadata: {
+                    source: 'mastra-action',
+                    status: 'failed',
+                    error: errorMessage,
+                },
+            })
+            .where(eq(chatMessages.id, assistantMessage.id));
+        await db
+            .update(chatSessions)
+            .set({ updatedAt: new Date() })
+            .where(eq(chatSessions.id, input.sessionId));
+        throw error;
+    }
+
+    await db
+        .update(chatSessions)
+        .set({ updatedAt: new Date() })
+        .where(eq(chatSessions.id, input.sessionId));
+
+    return { userMessage, assistantMessage: updatedAssistantMessage };
 }

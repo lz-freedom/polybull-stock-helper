@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Sparkles, Send, TrendingUp, BarChart3, LineChart, Newspaper, ChevronDown, CalendarDays, Search, Clock, MessageSquare, FileText, User, Bot } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -15,6 +15,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { extractStockInfoFromText } from '@/features/agents/actions/extract';
+import {
+    CHAT_MODE_OPTIONS,
+    CHAT_MODES,
+    type ChatMode,
+} from '@/features/agents/lib/chat-contract';
 
 interface MainPageClientProps {
     locale: string;
@@ -27,11 +32,17 @@ const quickPrompts = [
     { icon: Newspaper, textKey: 'prompt4' },
 ];
 
-const AGENT_OPTIONS = [
-    { value: 'qa', label: 'QA 问答', icon: MessageSquare },
-    { value: 'consensus', label: '共识分析', icon: BarChart3 },
-    { value: 'research', label: '深度研究', icon: FileText },
-];
+const MODE_ICONS = {
+    [CHAT_MODES.INSTANT]: MessageSquare,
+    [CHAT_MODES.RIGOROUS]: Search,
+    [CHAT_MODES.CONSENSUS]: BarChart3,
+    [CHAT_MODES.RESEARCH]: FileText,
+} as const;
+
+const MODE_OPTIONS = CHAT_MODE_OPTIONS.map((option) => ({
+    ...option,
+    icon: MODE_ICONS[option.id] ?? MessageSquare,
+}));
 
 interface ChatMessage {
     id: number;
@@ -41,13 +52,24 @@ interface ChatMessage {
     isStreaming?: boolean;
 }
 
+type QuotaInfo = {
+    mode: ChatMode;
+    limit: number;
+    used: number;
+    remaining: number;
+    overLimit: boolean;
+    periodKey: string;
+};
+
 export function MainPageClient({ locale }: MainPageClientProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const t = useTranslations('home');
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [inputValue, setInputValue] = useState('');
-    const [agentType, setAgentType] = useState('qa');
+    const [mode, setMode] = useState<ChatMode>(CHAT_MODES.INSTANT);
+    const [quotaByMode, setQuotaByMode] = useState<Record<ChatMode, QuotaInfo> | null>(null);
+    const [quotaNotice, setQuotaNotice] = useState<string | null>(null);
 
     // Chat state
     const [hasStartedChat, setHasStartedChat] = useState(false);
@@ -55,6 +77,15 @@ export function MainPageClient({ locale }: MainPageClientProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const disabledModes = useMemo(() => {
+        if (!quotaByMode) return new Set<ChatMode>();
+        return new Set(
+            Object.values(quotaByMode)
+                .filter((quota) => quota.overLimit)
+                .map((quota) => quota.mode),
+        );
+    }, [quotaByMode]);
 
     // 检测 auth=required 参数，自动弹出登录窗口
     useEffect(() => {
@@ -73,6 +104,44 @@ export function MainPageClient({ locale }: MainPageClientProps) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     });
+
+    useEffect(() => {
+        let isMounted = true;
+        async function loadQuota() {
+            try {
+                const res = await fetch('/api/agents/chat?action=get_quota');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (isMounted && data?.success && Array.isArray(data.quotas)) {
+                    const mapped = data.quotas.reduce(
+                        (acc: Record<ChatMode, QuotaInfo>, quota: QuotaInfo) => {
+                            acc[quota.mode] = quota;
+                            return acc;
+                        },
+                        {} as Record<ChatMode, QuotaInfo>,
+                    );
+                    setQuotaByMode(mapped);
+                }
+            } catch (error) {
+                console.warn('Failed to load quota', error);
+            }
+        }
+        loadQuota();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (disabledModes.size > 0 && disabledModes.has(mode)) {
+            const nextMode = MODE_OPTIONS.find((option) => !disabledModes.has(option.id))
+                ?.id ?? CHAT_MODES.INSTANT;
+            setMode(nextMode);
+            setQuotaNotice('当前模式配额已用完，请切换模式。');
+        } else {
+            setQuotaNotice(null);
+        }
+    }, [disabledModes, mode]);
 
     const handleCreateSession = async (content: string) => {
         try {
@@ -111,6 +180,10 @@ export function MainPageClient({ locale }: MainPageClientProps) {
 
     const handleSend = async () => {
         if (!inputValue.trim() || isLoading) return;
+        if (disabledModes.has(mode)) {
+            setQuotaNotice('当前模式配额已用完，请切换模式后再试。');
+            return;
+        }
 
         const content = inputValue.trim();
         // Do not clear input value immediately if we fail, but for now we clear
@@ -146,7 +219,7 @@ export function MainPageClient({ locale }: MainPageClientProps) {
             // 2. Redirect to standardized route
             const params = new URLSearchParams();
             params.set('initial_prompt', content); // snake_case
-            // params.set('type', agentType); // If backend supports type in create_session, we should pass it there. 
+            params.set('mode', mode);
             // For now, let's keep it minimal as requested.
 
             router.push(`/${locale}/chat/${sessionId}?${params.toString()}`);
@@ -171,7 +244,7 @@ export function MainPageClient({ locale }: MainPageClientProps) {
         }
     };
 
-    const currentAgent = AGENT_OPTIONS.find(a => a.value === agentType) || AGENT_OPTIONS[0];
+    const currentMode = MODE_OPTIONS.find((option) => option.id === mode) ?? MODE_OPTIONS[0];
 
     return (
         <>
@@ -273,22 +346,31 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                                     type="button"
                                                     className="-ml-1 inline-flex items-center gap-1 rounded-[6px] px-1 py-0.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                                                 >
-                                                    <currentAgent.icon className="h-4 w-4" />
-                                                    <span>{currentAgent.label}</span>
+                                                    <currentMode.icon className="h-4 w-4" />
+                                                    <span>{currentMode.label}</span>
                                                     <ChevronDown className="h-4 w-4" />
                                                 </button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="start">
-                                                {AGENT_OPTIONS.map((option) => (
+                                                {MODE_OPTIONS.map((option) => {
+                                                    const isDisabled = disabledModes.has(option.id);
+                                                    return (
                                                     <DropdownMenuItem
-                                                        key={option.value}
-                                                        onClick={() => setAgentType(option.value)}
+                                                        key={option.id}
+                                                        onClick={() => setMode(option.id)}
                                                         className="gap-2"
+                                                        disabled={isDisabled}
                                                     >
                                                         <option.icon className="h-4 w-4" />
                                                         {option.label}
+                                                        {isDisabled && (
+                                                            <span className="ml-auto text-[10px] text-red-500">
+                                                                配额不足
+                                                            </span>
+                                                        )}
                                                     </DropdownMenuItem>
-                                                ))}
+                                                    );
+                                                })}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
 
@@ -308,6 +390,9 @@ export function MainPageClient({ locale }: MainPageClientProps) {
                                             </button>
                                         </div>
                                     </div>
+                                    {quotaNotice && (
+                                        <p className="text-xs text-red-500">{quotaNotice}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

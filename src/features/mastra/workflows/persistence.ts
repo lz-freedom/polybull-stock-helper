@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import type { WorkflowEvent } from '@/features/mastra/events/types';
 import { db } from '@/lib/db/drizzle';
@@ -9,6 +9,8 @@ import {
     agentRunSteps,
     AGENT_RUN_STATUS,
     AGENT_STEP_STATUS,
+    usageCounters,
+    usageLogs,
     type AgentRunStatus,
     type AgentStepStatus,
 } from '@/lib/db/schema';
@@ -98,4 +100,59 @@ export function createPersistedWorkflowEventEmitter(params: {
             await params.emitter(event);
         }
     };
+}
+
+export async function bumpUsageCounter(params: {
+    userId: number | null | undefined;
+    mode: string;
+    periodKey: string;
+    delta: number;
+    limit: number;
+}) {
+    if (!params.userId) return;
+    const now = new Date();
+
+    await db
+        .insert(usageCounters)
+        .values({
+            userId: params.userId,
+            mode: params.mode,
+            used: params.delta,
+            limit: params.limit,
+            periodKey: params.periodKey,
+            createdAt: now,
+            updatedAt: now,
+        })
+        .onConflictDoUpdate({
+            target: [
+                usageCounters.userId,
+                usageCounters.mode,
+                usageCounters.periodKey,
+            ],
+            set: {
+                used: sql`${usageCounters.used} + ${params.delta}`,
+                limit: params.limit,
+                updatedAt: now,
+            },
+        });
+}
+
+export async function insertUsageLog(params: {
+    userId: number | null | undefined;
+    mode: string;
+    runId?: number | null;
+    sessionId?: string | null;
+    delta: number;
+    reason?: string;
+}) {
+    if (!params.userId) return;
+
+    await db.insert(usageLogs).values({
+        userId: params.userId,
+        mode: params.mode,
+        runId: params.runId ?? null,
+        sessionId: params.sessionId ?? null,
+        delta: params.delta,
+        reason: params.reason,
+    });
 }

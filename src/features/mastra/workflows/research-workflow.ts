@@ -19,6 +19,12 @@ import {
 } from '@/features/agents/lib/schemas';
 import { getOrFetchSnapshot, extractStockInfo } from '@/features/agents/lib/services/facts-snapshot-service';
 import { generateStructuredOutput, MODELS } from '@/features/agents/lib/services/llm-client';
+import {
+    buildContextPack,
+    searchExa,
+    searchPerplexity,
+    type ContextPack,
+} from '@/features/agents/lib/services/context-pack';
 import { db } from '@/lib/db/drizzle';
 import {
     agentRunSteps,
@@ -58,9 +64,10 @@ const ResearchWorkflowOutputSchema = z.object({
 type ResearchWorkflowOutput = z.infer<typeof ResearchWorkflowOutputSchema>;
 
 const ResearchWorkflowStateSchema = z.object({
-    startedAtMs: z.number().int(),
+    startedAtMs: z.number().int().optional(),
     snapshot: z.unknown().optional(),
     snapshotDbId: z.number().int().optional(),
+    contextPack: z.unknown().optional(),
     plan: z.unknown().optional(),
     findings: z.unknown().optional(),
     reportDbId: z.number().int().optional(),
@@ -158,22 +165,164 @@ export const researchWorkflow = createWorkflow({
                     status: AGENT_STEP_STATUS.RUNNING,
                 });
 
+                const snapshotCallId = `snapshot-${init.runDbId}-${Date.now()}`;
+                await emit(
+                    requestContext,
+                    createEvent('tool-call', {
+                        toolName: 'getStockSnapshot',
+                        callId: snapshotCallId,
+                        args: {
+                            stockSymbol: init.stockSymbol,
+                            exchangeAcronym: init.exchangeAcronym,
+                            forceRefresh: init.forceRefresh ?? false,
+                        },
+                    }),
+                );
+
                 const snapshot = await getOrFetchSnapshot(init.stockSymbol, init.exchangeAcronym, {
                     forceRefresh: init.forceRefresh,
                 });
+
+                await emit(
+                    requestContext,
+                    createEvent('tool-result', {
+                        callId: snapshotCallId,
+                        result: {
+                            snapshotId: snapshot.id,
+                            fetchedAt: snapshot.fetchedAt,
+                        },
+                    }),
+                );
 
                 await updateAgentRunStatus({
                     runDbId: init.runDbId,
                     status: AGENT_RUN_STATUS.RUNNING,
                     factsSnapshotId: snapshot.id,
                 });
+
+                const stockInfo = extractStockInfo(snapshot);
+                await emit(
+                    requestContext,
+                    createEvent('sources', {
+                        sources: [
+                            {
+                                title: `${stockInfo.symbol} snapshot`,
+                                url: `snapshot:${snapshot.id}`,
+                                sourceType: 'snapshot',
+                            },
+                        ],
+                    }),
+                );
+
+                const contextQuery = `${stockInfo.symbol} ${init.query}`;
+                const contextSources: ContextPack['sources'] = [];
+                const contextProviders: ContextPack['providers'] = {};
+                let contextPack: ContextPack | undefined;
+
+                if (process.env.EXA_API_KEY) {
+                    const exaCallId = `exa-${init.runDbId}-${Date.now()}`;
+                    await emit(
+                        requestContext,
+                        createEvent('tool-call', {
+                            toolName: 'exa.search',
+                            callId: exaCallId,
+                            args: { query: contextQuery },
+                        }),
+                    );
+                    try {
+                        const exaResult = await searchExa(contextQuery, { numResults: 6 });
+                        await emit(
+                            requestContext,
+                            createEvent('tool-result', {
+                                callId: exaCallId,
+                                result: {
+                                    count: exaResult?.sources.length ?? 0,
+                                    requestId: exaResult?.requestId,
+                                },
+                            }),
+                        );
+                        if (exaResult) {
+                            contextSources.push(...exaResult.sources);
+                            contextProviders.exa = {
+                                requestId: exaResult.requestId,
+                                resultCount: exaResult.sources.length,
+                                context: exaResult.context,
+                            };
+                        }
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : 'Exa search failed';
+                        await emit(
+                            requestContext,
+                            createEvent('error', {
+                                stepId: String(init.steps.fetchDataStepDbId),
+                                message,
+                                recoverable: true,
+                            }),
+                        );
+                    }
+                }
+
+                if (process.env.PERPLEXITY_API_KEY) {
+                    const pplxCallId = `pplx-${init.runDbId}-${Date.now()}`;
+                    await emit(
+                        requestContext,
+                        createEvent('tool-call', {
+                            toolName: 'perplexity.search',
+                            callId: pplxCallId,
+                            args: { query: contextQuery },
+                        }),
+                    );
+                    try {
+                        const pplxResult = await searchPerplexity(contextQuery, { maxResults: 6 });
+                        await emit(
+                            requestContext,
+                            createEvent('tool-result', {
+                                callId: pplxCallId,
+                                result: {
+                                    count: pplxResult?.sources.length ?? 0,
+                                    id: pplxResult?.id,
+                                },
+                            }),
+                        );
+                        if (pplxResult) {
+                            contextSources.push(...pplxResult.sources);
+                            contextProviders.perplexity = {
+                                id: pplxResult.id,
+                                resultCount: pplxResult.sources.length,
+                            };
+                        }
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : 'Perplexity search failed';
+                        await emit(
+                            requestContext,
+                            createEvent('error', {
+                                stepId: String(init.steps.fetchDataStepDbId),
+                                message,
+                                recoverable: true,
+                            }),
+                        );
+                    }
+                }
+
+                if (contextSources.length > 0) {
+                    contextPack = buildContextPack({
+                        query: contextQuery,
+                        sources: contextSources,
+                        providers: contextProviders,
+                    });
+                    await emit(
+                        requestContext,
+                        createEvent('sources', {
+                            sources: contextPack.sources,
+                        }),
+                    );
+                }
+
                 await updateAgentRunStepStatus({
                     stepDbId: init.steps.fetchDataStepDbId,
                     status: AGENT_STEP_STATUS.COMPLETED,
-                    output: { snapshotId: snapshot.id },
+                    output: { snapshotId: snapshot.id, contextPack },
                 });
-
-                const stockInfo = extractStockInfo(snapshot);
                 await emit(
                     requestContext,
                     createEvent('artifact', {
@@ -198,7 +347,7 @@ export const researchWorkflow = createWorkflow({
                     }),
                 );
 
-                await setState({ ...state, snapshot, snapshotDbId: snapshot.id });
+                await setState({ ...state, snapshot, snapshotDbId: snapshot.id, contextPack });
                 return {};
             },
         }),
@@ -313,6 +462,15 @@ export const researchWorkflow = createWorkflow({
                 );
 
                 const tasks = normalizeTasks(plan);
+                await emit(
+                    requestContext,
+                    createEvent('branch-status', {
+                        branches: tasks.map((task) => ({
+                            id: `${task.role}:${task.taskId}`,
+                            status: 'pending',
+                        })),
+                    }),
+                );
                 const createdSteps = await db
                     .insert(agentRunSteps)
                     .values(
@@ -331,6 +489,8 @@ export const researchWorkflow = createWorkflow({
                 for (let i = 0; i < tasks.length; i++) {
                     const task = tasks[i];
                     const step = createdSteps[i];
+                    const branchId = `${task.role}:${task.taskId}`;
+                    const startedAt = Date.now();
 
                     // 发送思考事件：开始研究当前任务
                     await emit(
@@ -346,6 +506,12 @@ export const researchWorkflow = createWorkflow({
                             stepId: String(step.id),
                             percent: 0,
                             message: `Starting ${task.role}`,
+                        }),
+                    );
+                    await emit(
+                        requestContext,
+                        createEvent('branch-status', {
+                            branches: [{ id: branchId, status: 'running' }],
                         }),
                     );
 
@@ -391,6 +557,12 @@ export const researchWorkflow = createWorkflow({
                                 message: `Completed ${task.role}`,
                             }),
                         );
+                        await emit(
+                            requestContext,
+                            createEvent('branch-status', {
+                                branches: [{ id: branchId, status: 'completed', durationMs: Date.now() - startedAt }],
+                            }),
+                        );
                     } catch (error) {
                         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                         await updateAgentRunStepStatus({
@@ -404,6 +576,12 @@ export const researchWorkflow = createWorkflow({
                                 stepId: String(step.id),
                                 message: errorMessage,
                                 recoverable: true,
+                            }),
+                        );
+                        await emit(
+                            requestContext,
+                            createEvent('branch-status', {
+                                branches: [{ id: branchId, status: 'failed', durationMs: Date.now() - startedAt }],
                             }),
                         );
                     }
@@ -430,6 +608,7 @@ export const researchWorkflow = createWorkflow({
                 const snapshot = toFactsSnapshot(state.snapshot);
                 const plan = toResearchPlan(state.plan);
                 const findings = toResearchFindings(state.findings);
+                const contextPack = state.contextPack;
 
                 const [synthesisStep] = await db
                     .insert(agentRunSteps)
@@ -478,6 +657,25 @@ export const researchWorkflow = createWorkflow({
                     maxRetries: 3,
                 });
 
+                const evidenceSources = findings
+                    .flatMap((finding) =>
+                        (finding.evidence ?? []).map((evidence) => ({
+                            title: evidence.claim,
+                            url: evidence.source,
+                            sourceType: 'evidence',
+                        })),
+                    )
+                    .filter((source) => source.title || source.url);
+
+                if (evidenceSources.length > 0) {
+                    await emit(
+                        requestContext,
+                        createEvent('sources', {
+                            sources: evidenceSources.slice(0, 20),
+                        }),
+                    );
+                }
+
                 await updateAgentRunStepStatus({
                     stepDbId: synthesisStep.id,
                     status: AGENT_STEP_STATUS.COMPLETED,
@@ -498,6 +696,7 @@ export const researchWorkflow = createWorkflow({
                             snapshot: state.snapshotDbId,
                             query: init.query,
                             roles: findings.map((f) => f.role),
+                            contextPack: contextPack ?? null,
                         },
                     })
                     .returning();
@@ -543,7 +742,7 @@ export const researchWorkflow = createWorkflow({
                     }),
                 );
 
-                const duration = Date.now() - state.startedAtMs;
+                const duration = Date.now() - (state.startedAtMs ?? Date.now());
                 await emit(
                     requestContext,
                     createEvent('complete', {

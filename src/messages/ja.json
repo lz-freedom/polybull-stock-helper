@@ -1,243 +1,555 @@
 {
-  "home": {
-    "welcomeTitle": "今日はどんな金融情報を探していますか？",
-    "welcomeSubtitle": "株式、市場、投資についてお気軽にお聞きください",
-    "inputPlaceholder": "株式、市場、投資について何でもお聞きください...",
-    "tryThese": "こちらの質問をお試しください",
-    "prompt1": "Apple (AAPL) の最新決算を分析",
-    "prompt2": "今日の市場で注目すべきセクターは？",
-    "prompt3": "テスラとBYDのバリュエーションを比較",
-    "prompt4": "最近の株式市場に影響を与えるニュースは？",
-    "disclaimer": "AIは間違いを犯す可能性があります。重要な情報は必ずご確認ください。投資にはリスクが伴います。"
-  },
-  "marketing": {
-    "hero": {
-      "badge": "AI Market Copilot",
-      "headlineLeading": "Decode global equities",
-      "headlineHighlight": "before Wall Street moves",
-      "subheading": "PolyBull unifies institutional data, AI signals, and human context so modern desks can see every rotation before it hits the tape.",
-      "primaryCta": "Launch PolyBull",
-      "secondaryCta": "See platform tour"
+    "home": {
+        "welcomeTitle": "今日はどんな金融情報を探していますか？",
+        "welcomeSubtitle": "株式、市場、投資についてお気軽にお聞きください",
+        "inputPlaceholder": "株式、市場、投資について何でもお聞きください...",
+        "tryThese": "こちらの質問をお試しください",
+        "prompt1": "Apple (AAPL) の最新決算を分析",
+        "prompt2": "今日の市場で注目すべきセクターは？",
+        "prompt3": "テスラとBYDのバリュエーションを比較",
+        "prompt4": "最近の株式市場に影響を与えるニュースは？",
+        "disclaimer": "AIは間違いを犯す可能性があります。重要な情報は必ずご確認ください。投資にはリスクが伴います。"
     },
-    "stats": {
-      "items": [
-        { "value": "5,800+", "label": "Stocks monitored" },
-        { "value": "$2.3T", "label": "Capital tracked daily" },
-        { "value": "92%", "label": "Signal precision" },
-        { "value": "<90ms", "label": "Data latency" }
-      ]
+    "homePage": {
+        "nav": {
+            "links": [
+                {
+                    "label": "プロダクト",
+                    "href": "#product"
+                },
+                {
+                    "label": "モデル",
+                    "href": "#models"
+                },
+                {
+                    "label": "コンセンサス",
+                    "href": "#consensus"
+                },
+                {
+                    "label": "リプレイ",
+                    "href": "#replay"
+                }
+            ],
+            "login": "ログイン",
+            "contact": "お問い合わせ",
+            "cta": "始める"
+        },
+        "hero": {
+            "badge": "AI 株式リサーチ",
+            "titleLine1": "投資判断の前に",
+            "titleLine2": "株を理解する",
+            "subtitle": "7モデルのコンセンサスで、決算・ニュース・指標をわかりやすく整理します。",
+            "primaryCta": "レポート作成",
+            "secondaryCta": "サンプルを見る",
+            "note": "研究目的のみ。投資助言ではありません。",
+            "modelPill": "7モデル合意",
+            "modelLabel": "利用モデル"
+        },
+        "preview": {
+            "title": "コンセンサスダッシュボード",
+            "badge": "ライブ",
+            "metrics": [
+                {
+                    "label": "合意スコア",
+                    "value": "78%"
+                },
+                {
+                    "label": "リスクフラグ",
+                    "value": "2"
+                },
+                {
+                    "label": "根拠",
+                    "value": "14 ソース"
+                }
+            ],
+            "chartOneLabel": "価格反応",
+            "chartOneValue": "+4.8%",
+            "chartTwoLabel": "ファンダメンタル",
+            "chartTwoValue": "QoQ"
+        },
+        "stats": {
+            "items": [
+                {
+                    "value": "8.2k",
+                    "label": "生成レポート"
+                },
+                {
+                    "value": "3.4x",
+                    "label": "調査スピード"
+                },
+                {
+                    "value": "92%",
+                    "label": "合意一致度"
+                }
+            ]
+        },
+        "models": {
+            "kicker": "モデル",
+            "title": "7つのモデル、1つの合意レポート。",
+            "subtitle": "並列分析と根拠付きの統合で、再現性の高い結論を提供します。"
+        },
+        "sdk": {
+            "codeTitle": "コンセンサスワークフロー",
+            "codeBadge": "7モデル",
+            "codeLabel": "Consensus API",
+            "code": [
+                "const report = await consensusWorkflow({",
+                "  ticker: 'NVDA',",
+                "  horizon: '3Y',",
+                "  tools: ['financials', 'news', 'technicals'],",
+                "  models: ['gpt-4.1', 'claude-3.5', 'deepseek-v3', 'qwen', 'kimi', 'minimax', 'grok'],",
+                "});",
+                "",
+                "return report.consensusSummary;"
+            ],
+            "primaryCta": "ドキュメント",
+            "secondaryCta": "ワークフロー"
+        },
+        "consensus": {
+            "kicker": "ワークフロー",
+            "title": "ステージ・ツール・ソース・分岐を可視化",
+            "subtitle": "データ取得から合意生成まで全工程を追跡。",
+            "items": [
+                {
+                    "title": "ステージタイムライン",
+                    "description": "各ステップの時間と成果を表示。"
+                },
+                {
+                    "title": "ツールエビデンス",
+                    "description": "ツール呼び出しと結果を確認。"
+                },
+                {
+                    "title": "ソースグラウンディング",
+                    "description": "結論に根拠を紐付け。"
+                },
+                {
+                    "title": "分岐ステータス",
+                    "description": "各モデルの貢献を可視化。"
+                }
+            ]
+        },
+        "replay": {
+            "kicker": "リプレイ",
+            "title": "すべての実行を再生",
+            "subtitle": "速度調整、イベント確認、任意ステージへジャンプ。",
+            "events": [
+                {
+                    "title": "ステージ：データ取得",
+                    "meta": "0.6s"
+                },
+                {
+                    "title": "ツール：getStockSnapshot",
+                    "meta": "成功"
+                },
+                {
+                    "title": "ソース：12件の引用",
+                    "meta": "2.3s"
+                },
+                {
+                    "title": "分岐：7モデル完了",
+                    "meta": "4.9s"
+                }
+            ],
+            "highlight": "データストリーム",
+            "heading": "合意ストリームを完全再生",
+            "description": "Context Pack と合わせて再現性の高い監査が可能です。"
+        },
+        "faq": {
+            "kicker": "FAQ",
+            "title": "よくある質問",
+            "subtitle": "AIで株式リサーチを始める前の疑問。",
+            "items": [
+                {
+                    "question": "投資助言ですか？",
+                    "answer": "いいえ。研究と背景情報の提供のみです。"
+                },
+                {
+                    "question": "合意はどう作る？",
+                    "answer": "7モデルを並列実行し、合意度を計算して統合します。"
+                },
+                {
+                    "question": "データソースは？",
+                    "answer": "決算、マーケットデータ、信頼性の高いニュース。"
+                }
+            ]
+        },
+        "cta": {
+            "kicker": "準備はいいですか",
+            "title": "投資前の理解をもっと明確に",
+            "subtitle": "ストーリー、リスク、数値を整理して判断を支えます。",
+            "button": "今すぐ開始"
+        },
+        "footer": {
+            "columns": [
+                {
+                    "title": "プロダクト",
+                    "links": [
+                        "概要",
+                        "コンセンサス",
+                        "リプレイ",
+                        "レポート"
+                    ]
+                },
+                {
+                    "title": "会社",
+                    "links": [
+                        "会社概要",
+                        "採用",
+                        "ブログ",
+                        "お問い合わせ"
+                    ]
+                },
+                {
+                    "title": "リソース",
+                    "links": [
+                        "ドキュメント",
+                        "更新履歴",
+                        "サポート",
+                        "ステータス"
+                    ]
+                },
+                {
+                    "title": "法務",
+                    "links": [
+                        "セキュリティ",
+                        "プライバシー",
+                        "利用規約",
+                        "コンプライアンス"
+                    ]
+                }
+            ],
+            "rights": "All rights reserved."
+        }
     },
-    "ticker": {
-      "title": "Live Signals",
-      "items": [
-        { "symbol": "SPY", "label": "US Momentum", "change": "+1.42%" },
-        { "symbol": "NVDA", "label": "Options Sweep", "change": "+3.58%" },
-        { "symbol": "TSLA", "label": "Short Covering", "change": "+2.11%" },
-        { "symbol": "ASML", "label": "EU Tech Rotation", "change": "-0.84%" },
-        { "symbol": "^N225", "label": "Tokyo Session", "change": "+0.63%" }
-      ]
+    "marketing": {
+        "hero": {
+            "badge": "AI Market Copilot",
+            "headlineLeading": "Decode global equities",
+            "headlineHighlight": "before Wall Street moves",
+            "subheading": "PolyBull unifies institutional data, AI signals, and human context so modern desks can see every rotation before it hits the tape.",
+            "primaryCta": "Launch PolyBull",
+            "secondaryCta": "See platform tour"
+        },
+        "stats": {
+            "items": [
+                {
+                    "value": "5,800+",
+                    "label": "Stocks monitored"
+                },
+                {
+                    "value": "$2.3T",
+                    "label": "Capital tracked daily"
+                },
+                {
+                    "value": "92%",
+                    "label": "Signal precision"
+                },
+                {
+                    "value": "<90ms",
+                    "label": "Data latency"
+                }
+            ]
+        },
+        "ticker": {
+            "title": "Live Signals",
+            "items": [
+                {
+                    "symbol": "SPY",
+                    "label": "US Momentum",
+                    "change": "+1.42%"
+                },
+                {
+                    "symbol": "NVDA",
+                    "label": "Options Sweep",
+                    "change": "+3.58%"
+                },
+                {
+                    "symbol": "TSLA",
+                    "label": "Short Covering",
+                    "change": "+2.11%"
+                },
+                {
+                    "symbol": "ASML",
+                    "label": "EU Tech Rotation",
+                    "change": "-0.84%"
+                },
+                {
+                    "symbol": "^N225",
+                    "label": "Tokyo Session",
+                    "change": "+0.63%"
+                }
+            ]
+        },
+        "trust": {
+            "title": "Trusted by desks at",
+            "partners": [
+                "Atlas Capital",
+                "Northwind Advisors",
+                "Emerald Ridge",
+                "Helios Macro"
+            ]
+        },
+        "features": {
+            "title": "Institutional-grade intelligence",
+            "subtitle": "Everything you need to interrogate equities in one terminal.",
+            "items": [
+                {
+                    "title": "Predictive Signals",
+                    "description": "Proprietary ML surfaces unusual flow, liquidity vacuums, and lead-lag anomalies."
+                },
+                {
+                    "title": "Scenario Lab",
+                    "description": "Stress portfolios against macro regimes, rate paths, and sector rotations in seconds."
+                },
+                {
+                    "title": "Risk Radar",
+                    "description": "Live factor exposures, crowding scores, and downside breakpoints for every ticker."
+                },
+                {
+                    "title": "Automation Stack",
+                    "description": "Route alerts to Slack, Symphony, or OMS when PolyBull spots asymmetric risk."
+                }
+            ]
+        },
+        "live": {
+            "title": "Live intel stream",
+            "insightTitle": "AI Insight",
+            "insightBody": "Financials factor reversing as energy bid accelerates. Watch regional banks for catch-up and fade extended semi strength.",
+            "manualTitle": "Analyst Desk",
+            "manualBody": "Desk notes rotation out of megacap tech into cyclicals after CPI surprise. Monitoring liquidity pockets in airlines and homebuilders.",
+            "eventsTitle": "Recent flow alerts",
+            "events": [
+                {
+                    "title": "Options sweep",
+                    "description": "NVDA 0DTE call wall triggered at $140 strike."
+                },
+                {
+                    "title": "Dark pool print",
+                    "description": "$38M block in LLY executes 12 bps above NBBO."
+                },
+                {
+                    "title": "Rebalance pulse",
+                    "description": "CTAs adding $1.1B exposure to S&P futures into close."
+                }
+            ]
+        },
+        "markets": {
+            "title": "Global market coverage",
+            "subtitle": "PolyBull ingests equity, ETF, and futures data across every major venue.",
+            "regions": [
+                {
+                    "name": "Americas",
+                    "exchanges": [
+                        "NYSE",
+                        "NASDAQ",
+                        "B3"
+                    ],
+                    "note": "90% US notional tracked"
+                },
+                {
+                    "name": "EMEA",
+                    "exchanges": [
+                        "LSE",
+                        "XETRA",
+                        "Euronext"
+                    ],
+                    "note": "Cross-asset signals + FX overlay"
+                },
+                {
+                    "name": "APAC",
+                    "exchanges": [
+                        "TSE",
+                        "HKEX",
+                        "ASX"
+                    ],
+                    "note": "Overnight session heatmaps"
+                }
+            ]
+        },
+        "partners": {
+            "title": "Data & infrastructure",
+            "logos": [
+                "Nasdaq",
+                "NYSE",
+                "Bloomberg",
+                "Refinitiv",
+                "FactSet",
+                "Snowflake"
+            ]
+        },
+        "faq": {
+            "title": "Questions, answered",
+            "subtitle": "Everything teams ask before moving to PolyBull.",
+            "items": [
+                {
+                    "question": "Where does PolyBull source data?",
+                    "answer": "We stream equities, options, and macro feeds from top-tier venues plus proprietary sentiment pipelines."
+                },
+                {
+                    "question": "Do you replace the analyst desk?",
+                    "answer": "PolyBull augments humans with faster context. Desks keep control over risk and execution."
+                },
+                {
+                    "question": "Can we pipe alerts into our workflow?",
+                    "answer": "Yes. PolyBull delivers to Slack, Teams, Symphony, Bloomberg IB, and custom webhooks."
+                },
+                {
+                    "question": "What compliance safeguards exist?",
+                    "answer": "SOC 2 Type II, regional data residency, SSO, audit trails, and fine-grained permissions ship standard."
+                }
+            ]
+        },
+        "cta": {
+            "title": "Ready to see around the next rotation?",
+            "subtitle": "Join funds that move faster with PolyBull's AI market copilot.",
+            "primary": "Start free trial",
+            "secondary": "Talk to our team"
+        }
     },
-    "trust": {
-      "title": "Trusted by desks at",
-      "partners": ["Atlas Capital", "Northwind Advisors", "Emerald Ridge", "Helios Macro"]
+    "common": {
+        "appName": "iVibeFinance",
+        "signIn": "ログイン",
+        "signUp": "新規登録",
+        "signOut": "ログアウト",
+        "dashboard": "ダッシュボード",
+        "settings": "設定",
+        "admin": "管理画面",
+        "home": "ホーム",
+        "pricing": "料金",
+        "loading": "読み込み中...",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "delete": "削除",
+        "edit": "編集",
+        "create": "作成",
+        "search": "検索",
+        "back": "戻る",
+        "next": "次へ",
+        "previous": "前へ",
+        "submit": "送信",
+        "confirm": "確認",
+        "success": "成功",
+        "error": "エラー",
+        "warning": "警告"
     },
-    "features": {
-      "title": "Institutional-grade intelligence",
-      "subtitle": "Everything you need to interrogate equities in one terminal.",
-      "items": [
-        { "title": "Predictive Signals", "description": "Proprietary ML surfaces unusual flow, liquidity vacuums, and lead-lag anomalies." },
-        { "title": "Scenario Lab", "description": "Stress portfolios against macro regimes, rate paths, and sector rotations in seconds." },
-        { "title": "Risk Radar", "description": "Live factor exposures, crowding scores, and downside breakpoints for every ticker." },
-        { "title": "Automation Stack", "description": "Route alerts to Slack, Symphony, or OMS when PolyBull spots asymmetric risk." }
-      ]
+    "sidebar": {
+        "newChat": "新しいチャット",
+        "financeWiki": "金融百科",
+        "marketPulse": "マーケットパルス",
+        "newFeature": "新機能",
+        "appearance": "外観",
+        "language": "言語",
+        "light": "ライト",
+        "dark": "ダーク",
+        "system": "システム",
+        "learnMore": "詳細を見る",
+        "shareWithFriends": "友だちと Surf を共有",
+        "signInOrUp": "ログイン / 登録",
+        "upgrade": "アップグレード",
+        "redeemCode": "引き換えコード",
+        "settings": "設定",
+        "signOut": "ログアウト",
+        "accountMenu": "アカウントメニュー",
+        "enterEmail": "メールアドレスを入力",
+        "continue": "続ける",
+        "or": "または",
+        "privacyPolicy": "プライバシーポリシー",
+        "termsOfService": "利用規約",
+        "agreeText": "*アカウントを作成することで、iVibeFinance の以下に同意したことになります"
     },
-    "live": {
-      "title": "Live intel stream",
-      "insightTitle": "AI Insight",
-      "insightBody": "Financials factor reversing as energy bid accelerates. Watch regional banks for catch-up and fade extended semi strength.",
-      "manualTitle": "Analyst Desk",
-      "manualBody": "Desk notes rotation out of megacap tech into cyclicals after CPI surprise. Monitoring liquidity pockets in airlines and homebuilders.",
-      "eventsTitle": "Recent flow alerts",
-      "events": [
-        { "title": "Options sweep", "description": "NVDA 0DTE call wall triggered at $140 strike." },
-        { "title": "Dark pool print", "description": "$38M block in LLY executes 12 bps above NBBO." },
-        { "title": "Rebalance pulse", "description": "CTAs adding $1.1B exposure to S&P futures into close." }
-      ]
+    "auth": {
+        "email": "メールアドレス",
+        "password": "パスワード",
+        "emailPlaceholder": "メールアドレスを入力",
+        "passwordPlaceholder": "パスワードを入力",
+        "signInTitle": "アカウントにログイン",
+        "signUpTitle": "アカウントを作成",
+        "googleSignIn": "Google でログイン",
+        "magicLink": "マジックリンクを送信",
+        "magicLinkSent": "メールをご確認ください！",
+        "orContinueWith": "または以下で続ける",
+        "newToPlatform": "アカウントをお持ちでない方",
+        "alreadyHaveAccount": "すでにアカウントをお持ちの方",
+        "createAccount": "アカウントを作成",
+        "signInToExisting": "既存のアカウントでログイン",
+        "forgotPassword": "パスワードをお忘れですか？",
+        "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
+        "accountCreated": "アカウントが作成されました！",
+        "signedOut": "ログアウトしました。"
     },
-    "markets": {
-      "title": "Global market coverage",
-      "subtitle": "PolyBull ingests equity, ETF, and futures data across every major venue.",
-      "regions": [
-        { "name": "Americas", "exchanges": ["NYSE", "NASDAQ", "B3"], "note": "90% US notional tracked" },
-        { "name": "EMEA", "exchanges": ["LSE", "XETRA", "Euronext"], "note": "Cross-asset signals + FX overlay" },
-        { "name": "APAC", "exchanges": ["TSE", "HKEX", "ASX"], "note": "Overnight session heatmaps" }
-      ]
+    "email": {
+        "magicLink": {
+            "subject": "iVibeFinance にサインイン",
+            "title": "サインイン",
+            "body": "下のボタンからサインインしてください。このリンクはまもなく無効になります。",
+            "button": "iVibeFinance にサインイン",
+            "fallback": "ボタンが動作しない場合は、次のリンクをコピーしてブラウザで開いてください：",
+            "footer": "このメールに心当たりがない場合は、破棄してください。"
+        },
+        "footer": {
+            "followTitle": "最新情報、チュートリアル、コミュニティのハイライトはこちら：",
+            "updatesLine": "より良い体験のため、不定期で製品アップデートをお送りします。配信を希望しない場合は、いつでも {unsubscribe} できます。",
+            "unsubscribe": "配信停止"
+        }
     },
-    "partners": {
-      "title": "Data & infrastructure",
-      "logos": ["Nasdaq", "NYSE", "Bloomberg", "Refinitiv", "FactSet", "Snowflake"]
+    "dashboard": {
+        "title": "ダッシュボード",
+        "welcome": "おかえりなさい",
+        "overview": "概要",
+        "activity": "アクティビティ",
+        "team": "チーム",
+        "general": "一般",
+        "security": "セキュリティ",
+        "billing": "請求",
+        "noActivity": "アクティビティはありません"
     },
-    "faq": {
-      "title": "Questions, answered",
-      "subtitle": "Everything teams ask before moving to PolyBull.",
-      "items": [
-        { "question": "Where does PolyBull source data?", "answer": "We stream equities, options, and macro feeds from top-tier venues plus proprietary sentiment pipelines." },
-        { "question": "Do you replace the analyst desk?", "answer": "PolyBull augments humans with faster context. Desks keep control over risk and execution." },
-        { "question": "Can we pipe alerts into our workflow?", "answer": "Yes. PolyBull delivers to Slack, Teams, Symphony, Bloomberg IB, and custom webhooks." },
-        { "question": "What compliance safeguards exist?", "answer": "SOC 2 Type II, regional data residency, SSO, audit trails, and fine-grained permissions ship standard." }
-      ]
+    "admin": {
+        "title": "管理ダッシュボード",
+        "users": "ユーザー管理",
+        "teams": "チーム管理",
+        "subscriptions": "サブスクリプション",
+        "analytics": "アナリティクス",
+        "activityLogs": "アクティビティログ",
+        "systemSettings": "システム設定",
+        "totalUsers": "総ユーザー数",
+        "totalTeams": "総チーム数",
+        "activeSubscriptions": "アクティブなサブスクリプション",
+        "recentActivity": "最近のアクティビティ",
+        "userManagement": "ユーザー管理",
+        "roleManagement": "役割管理",
+        "superAdmin": "スーパー管理者",
+        "adminRole": "管理者",
+        "memberRole": "メンバー"
     },
-    "cta": {
-      "title": "Ready to see around the next rotation?",
-      "subtitle": "Join funds that move faster with PolyBull's AI market copilot.",
-      "primary": "Start free trial",
-      "secondary": "Talk to our team"
+    "team": {
+        "title": "チーム",
+        "members": "メンバー",
+        "inviteMember": "メンバーを招待",
+        "removeMember": "メンバーを削除",
+        "owner": "オーナー",
+        "member": "メンバー",
+        "pending": "保留中",
+        "invitationSent": "招待を送信しました",
+        "memberRemoved": "メンバーを削除しました"
+    },
+    "settings": {
+        "title": "設定",
+        "profile": "プロフィール",
+        "account": "アカウント",
+        "notifications": "通知",
+        "updateProfile": "プロフィールを更新",
+        "changePassword": "パスワードを変更",
+        "deleteAccount": "アカウントを削除",
+        "currentPassword": "現在のパスワード",
+        "newPassword": "新しいパスワード",
+        "confirmPassword": "パスワードを確認",
+        "passwordUpdated": "パスワードを更新しました",
+        "profileUpdated": "プロフィールを更新しました"
+    },
+    "errors": {
+        "generic": "エラーが発生しました。もう一度お試しください。",
+        "notFound": "ページが見つかりません",
+        "unauthorized": "このページへのアクセス権限がありません",
+        "serverError": "サーバーエラーが発生しました。後でもう一度お試しください。"
     }
-  },
-  "common": {
-    "appName": "iVibeFinance",
-    "signIn": "ログイン",
-    "signUp": "新規登録",
-    "signOut": "ログアウト",
-    "dashboard": "ダッシュボード",
-    "settings": "設定",
-    "admin": "管理画面",
-    "home": "ホーム",
-    "pricing": "料金",
-    "loading": "読み込み中...",
-    "save": "保存",
-    "cancel": "キャンセル",
-    "delete": "削除",
-    "edit": "編集",
-    "create": "作成",
-    "search": "検索",
-    "back": "戻る",
-    "next": "次へ",
-    "previous": "前へ",
-    "submit": "送信",
-    "confirm": "確認",
-    "success": "成功",
-    "error": "エラー",
-    "warning": "警告"
-  },
-  "sidebar": {
-    "newChat": "新しいチャット",
-    "financeWiki": "金融百科",
-    "marketPulse": "マーケットパルス",
-    "newFeature": "新機能",
-    "appearance": "外観",
-    "language": "言語",
-    "light": "ライト",
-    "dark": "ダーク",
-    "system": "システム",
-    "learnMore": "詳細を見る",
-    "shareWithFriends": "友だちと Surf を共有",
-    "signInOrUp": "ログイン / 登録",
-    "upgrade": "アップグレード",
-    "redeemCode": "引き換えコード",
-    "settings": "設定",
-    "signOut": "ログアウト",
-    "accountMenu": "アカウントメニュー",
-    "enterEmail": "メールアドレスを入力",
-    "continue": "続ける",
-    "or": "または",
-    "privacyPolicy": "プライバシーポリシー",
-    "termsOfService": "利用規約",
-    "agreeText": "*アカウントを作成することで、iVibeFinance の以下に同意したことになります"
-  },
-  "auth": {
-    "email": "メールアドレス",
-    "password": "パスワード",
-    "emailPlaceholder": "メールアドレスを入力",
-    "passwordPlaceholder": "パスワードを入力",
-    "signInTitle": "アカウントにログイン",
-    "signUpTitle": "アカウントを作成",
-    "googleSignIn": "Google でログイン",
-    "magicLink": "マジックリンクを送信",
-    "magicLinkSent": "メールをご確認ください！",
-    "orContinueWith": "または以下で続ける",
-    "newToPlatform": "アカウントをお持ちでない方",
-    "alreadyHaveAccount": "すでにアカウントをお持ちの方",
-    "createAccount": "アカウントを作成",
-    "signInToExisting": "既存のアカウントでログイン",
-    "forgotPassword": "パスワードをお忘れですか？",
-    "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
-    "accountCreated": "アカウントが作成されました！",
-    "signedOut": "ログアウトしました。"
-  },
-  "email": {
-    "magicLink": {
-      "subject": "iVibeFinance にサインイン",
-      "title": "サインイン",
-      "body": "下のボタンからサインインしてください。このリンクはまもなく無効になります。",
-      "button": "iVibeFinance にサインイン",
-      "fallback": "ボタンが動作しない場合は、次のリンクをコピーしてブラウザで開いてください：",
-      "footer": "このメールに心当たりがない場合は、破棄してください。"
-    },
-    "footer": {
-      "followTitle": "最新情報、チュートリアル、コミュニティのハイライトはこちら：",
-      "updatesLine": "より良い体験のため、不定期で製品アップデートをお送りします。配信を希望しない場合は、いつでも {unsubscribe} できます。",
-      "unsubscribe": "配信停止"
-    }
-  },
-  "dashboard": {
-    "title": "ダッシュボード",
-    "welcome": "おかえりなさい",
-    "overview": "概要",
-    "activity": "アクティビティ",
-    "team": "チーム",
-    "general": "一般",
-    "security": "セキュリティ",
-    "billing": "請求",
-    "noActivity": "アクティビティはありません"
-  },
-  "admin": {
-    "title": "管理ダッシュボード",
-    "users": "ユーザー管理",
-    "teams": "チーム管理",
-    "subscriptions": "サブスクリプション",
-    "analytics": "アナリティクス",
-    "activityLogs": "アクティビティログ",
-    "systemSettings": "システム設定",
-    "totalUsers": "総ユーザー数",
-    "totalTeams": "総チーム数",
-    "activeSubscriptions": "アクティブなサブスクリプション",
-    "recentActivity": "最近のアクティビティ",
-    "userManagement": "ユーザー管理",
-    "roleManagement": "役割管理",
-    "superAdmin": "スーパー管理者",
-    "adminRole": "管理者",
-    "memberRole": "メンバー"
-  },
-  "team": {
-    "title": "チーム",
-    "members": "メンバー",
-    "inviteMember": "メンバーを招待",
-    "removeMember": "メンバーを削除",
-    "owner": "オーナー",
-    "member": "メンバー",
-    "pending": "保留中",
-    "invitationSent": "招待を送信しました",
-    "memberRemoved": "メンバーを削除しました"
-  },
-  "settings": {
-    "title": "設定",
-    "profile": "プロフィール",
-    "account": "アカウント",
-    "notifications": "通知",
-    "updateProfile": "プロフィールを更新",
-    "changePassword": "パスワードを変更",
-    "deleteAccount": "アカウントを削除",
-    "currentPassword": "現在のパスワード",
-    "newPassword": "新しいパスワード",
-    "confirmPassword": "パスワードを確認",
-    "passwordUpdated": "パスワードを更新しました",
-    "profileUpdated": "プロフィールを更新しました"
-  },
-  "errors": {
-    "generic": "エラーが発生しました。もう一度お試しください。",
-    "notFound": "ページが見つかりません",
-    "unauthorized": "このページへのアクセス権限がありません",
-    "serverError": "サーバーエラーが発生しました。後でもう一度お試しください。"
-  }
 }

@@ -1,4 +1,5 @@
 import { WorkflowStream } from '@/features/mastra/components/workflow-stream';
+import { WorkflowReplay } from '@/features/mastra/components/workflow-replay';
 import { setRequestLocale } from 'next-intl/server';
 
 interface PageProps {
@@ -17,7 +18,10 @@ export default async function ResearchPage({ params }: PageProps) {
                 Run autonomous research workflows with live thought streaming.
             </p>
         </div>
-        <WorkflowStream />
+        <div className="space-y-8">
+            <WorkflowStream />
+            <WorkflowReplay />
+        </div>
     </div>
   );
 }

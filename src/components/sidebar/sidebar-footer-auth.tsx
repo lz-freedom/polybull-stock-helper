@@ -10,8 +10,10 @@ import {
     Moon,
     Monitor,
     Gem,
-    Sparkles
+    Sparkles,
+    Users
 } from 'lucide-react';
+import inviteFriendsBg from '@/assets/invite-friends-bg.png';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -73,17 +75,20 @@ export function SidebarFooterAuth({
 
     return (
         <div className="p-3 space-y-3">
-            {/* Surf Waves Card - The "Upgrade" visual context */}
-            <div className="rounded-xl bg-[#F5F2EE] dark:bg-zinc-900 border border-t-white/50 border-b-black/5 p-3 relative overflow-hidden group hover:border-pink-200/50 transition-colors cursor-pointer">
-                {/* Decorative background waves could go here */}
-                <div className="relative z-10 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-orange-400">
-                        <span className="text-xl">🌊</span>
-                    </div>
-                    <div>
-                        <div className="font-serif text-sm text-[#8B7E72] dark:text-gray-300">Surf Waves</div>
-                        <div className="text-[10px] text-muted-foreground">0 waves available</div>
-                    </div>
+            {/* Surf Waves Card - The "Upgrade" visual context -> Now Invite Friends */}
+            <div
+                className="rounded-md border border-border p-0 relative overflow-hidden group hover:border-pink-200/50 transition-colors cursor-pointer h-10 flex items-center"
+                style={{
+                    backgroundImage: `url(${inviteFriendsBg.src})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundColor: '#1E1E1E' // Fallback color
+                }}
+            >
+                <div className="relative z-10 flex items-center gap-2 px-3 w-full">
+                    <Users className="h-4 w-4 text-white" />
+                    <span className="font-medium text-sm text-white">{t('inviteFriends')}</span>
                 </div>
             </div>
 
@@ -102,53 +107,53 @@ export function SidebarFooterAuth({
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                     <span className="text-sm font-semibold truncate text-foreground">{userDisplayName}</span>
                     {/* Pink Upgrade Chip */}
-                    <button className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-pink-200 shadow-sm text-[10px] font-bold text-pink-500 hover:bg-pink-50 transition-colors">
+                    <button className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-transparent border border-[#EC4899] hover:bg-[#EC4899]/10 shadow-sm text-[10px] font-bold text-[#EC4899] transition-colors">
                         <Gem className="h-3 w-3" />
-                        Upgrade
+                        {t('upgrade')}
                     </button>
                 </div>
 
                 {/* More Menu */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0">
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56" side="top">
+                    <DropdownMenuContent align="end" className="w-56 p-1.5" side="top">
                         {/* Upgrade */}
-                        <DropdownMenuItem className="text-pink-500 focus:text-pink-600 focus:bg-pink-50">
+                        <DropdownMenuItem className="text-pink-500 focus:text-pink-600 focus:bg-pink-50 cursor-pointer flex items-center gap-2">
                             <Sparkles className="mr-2 h-4 w-4" />
-                            <span>Upgrade Plan</span>
+                            <span>{t('upgradePlan')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />
 
                         {/* Appearance Submenu */}
                         <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                                <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                                <Moon className="absolute mr-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                                <span className="ml-6">Appearance</span>
+                            <DropdownMenuSubTrigger className="flex items-center gap-2 cursor-pointer">
+                                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                                <span>{t('appearance')}</span>
                             </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
+                            <DropdownMenuSubContent className="ml-2">
                                 <DropdownMenuItem onClick={() => onThemeChange('light')}>
-                                    <Sun className="mr-2 h-4 w-4" /> Light
+                                    <Sun className="mr-2 h-4 w-4" /> {t('light')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => onThemeChange('dark')}>
-                                    <Moon className="mr-2 h-4 w-4" /> Dark
+                                    <Moon className="mr-2 h-4 w-4" /> {t('dark')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => onThemeChange('system')}>
-                                    <Monitor className="mr-2 h-4 w-4" /> System
+                                    <Monitor className="mr-2 h-4 w-4" /> {t('system')}
                                 </DropdownMenuItem>
                             </DropdownMenuSubContent>
                         </DropdownMenuSub>
 
                         {/* Language Submenu */}
                         <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                                <Languages className="mr-2 h-4 w-4" />
-                                <span>Language</span>
+                            <DropdownMenuSubTrigger className="flex items-center gap-2 cursor-pointer">
+                                <Languages className="h-4 w-4" />
+                                <span>{t('language')}</span>
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                                 <DropdownMenuItem onClick={() => onLocaleChange('en')}>English</DropdownMenuItem>
@@ -158,17 +163,17 @@ export function SidebarFooterAuth({
                         </DropdownMenuSub>
 
                         {/* Settings */}
-                        <DropdownMenuItem>
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>Settings</span>
+                        <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                            <Settings className="h-4 w-4" />
+                            <span>{t('settings')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />
 
                         {/* Logout */}
-                        <DropdownMenuItem onClick={() => signOut()}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
+                        <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 cursor-pointer text-red-500 focus:text-red-600 focus:bg-red-50">
+                            <LogOut className="h-4 w-4" />
+                            <span>{t('signOut')}</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

@@ -58,7 +58,9 @@ interface AppSidebarProps {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+
 function ChatHistoryList({ locale, pathname }: { locale: string, pathname: string }) {
+    const t = useTranslations('sidebar');
     const { data, error } = useSWR('/api/agents/chat?action=get_user_sessions&limit=20', fetcher, {
         refreshInterval: 0,
         revalidateOnFocus: true
@@ -68,92 +70,23 @@ function ChatHistoryList({ locale, pathname }: { locale: string, pathname: strin
 
     const sessions = data.sessions as any[];
 
-    // Simple grouping logic
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const historyGroups = {
-        today: [] as any[],
-        yesterday: [] as any[],
-        previous: [] as any[],
-    };
-
-    sessions.forEach(session => {
-        const date = new Date(session.createdAt);
-        date.setHours(0, 0, 0, 0);
-        if (date.getTime() === today.getTime()) {
-            historyGroups.today.push(session);
-        } else if (date.getTime() === yesterday.getTime()) {
-            historyGroups.yesterday.push(session);
-        } else {
-            historyGroups.previous.push(session);
-        }
-    });
-
     return (
-        <div className="space-y-4 pr-3 text-sm">
-            {historyGroups.today.length > 0 && (
-                <div className="space-y-1">
-                    <div className="px-2 text-[10px] font-medium text-muted-foreground/70 uppercase">Today</div>
-                    {historyGroups.today.map(session => (
-                        <Link
-                            key={session.id}
-                            href={`/${locale}/chat/${session.id}`}
-                            className={cn(
-                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors truncate",
-                                pathname.includes(session.id)
-                                    ? "bg-secondary text-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                            )}
-                        >
-                            <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{session.title || 'New Chat'}</span>
-                        </Link>
-                    ))}
-                </div>
-            )}
-            {historyGroups.yesterday.length > 0 && (
-                <div className="space-y-1">
-                    <div className="px-2 text-[10px] font-medium text-muted-foreground/70 uppercase">Yesterday</div>
-                    {historyGroups.yesterday.map(session => (
-                        <Link
-                            key={session.id}
-                            href={`/${locale}/chat/${session.id}`}
-                            className={cn(
-                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors truncate",
-                                pathname.includes(session.id)
-                                    ? "bg-secondary text-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                            )}
-                        >
-                            <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{session.title || 'New Chat'}</span>
-                        </Link>
-                    ))}
-                </div>
-            )}
-            {historyGroups.previous.length > 0 && (
-                <div className="space-y-1">
-                    <div className="px-2 text-[10px] font-medium text-muted-foreground/70 uppercase">Previous</div>
-                    {historyGroups.previous.map(session => (
-                        <Link
-                            key={session.id}
-                            href={`/${locale}/chat/${session.id}`}
-                            className={cn(
-                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors truncate",
-                                pathname.includes(session.id)
-                                    ? "bg-secondary text-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                            )}
-                        >
-                            <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{session.title || 'New Chat'}</span>
-                        </Link>
-                    ))}
-                </div>
-            )}
+        <div className="space-y-1 text-sm">
+            <div className="px-2 py-1 text-xs font-medium text-muted-foreground">{t('history') || 'History'}</div>
+            {sessions.map(session => (
+                <Link
+                    key={session.id}
+                    href={`/${locale}/chat/${session.id}`}
+                    className={cn(
+                        "block rounded-md px-2 py-1.5 text-sm transition-colors truncate",
+                        pathname.includes(session.id)
+                            ? "bg-zinc-100 dark:bg-zinc-800 text-foreground font-medium"
+                            : "text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-foreground"
+                    )}
+                >
+                    <span className="truncate">{session.title || 'New Chat'}</span>
+                </Link>
+            ))}
         </div>
     );
 }
@@ -182,7 +115,6 @@ export function AppSidebar({ locale }: AppSidebarProps) {
     const t = useTranslations('sidebar');
 
     const menuItems = [
-        { icon: MessageSquarePlus, labelKey: 'newChat', href: '/' },
         { icon: BookOpen, labelKey: 'financeWiki', href: '/wiki' },
         { icon: Activity, labelKey: 'marketPulse', href: '/pulse', isNew: true },
     ];
@@ -231,15 +163,15 @@ export function AppSidebar({ locale }: AppSidebarProps) {
             <>
                 <aside
                     className={cn(
-                        'flex flex-col h-full bg-[#FAFAFA] dark:bg-[#191919] border-r border-border transition-all duration-300',
+                        'flex flex-col h-full bg-sidebar border-r border-border transition-all duration-300',
                         collapsed ? 'w-16' : 'w-[280px]',
                     )}
                 >
                     {/* Header: Logo & Toggle */}
-                    <div className="flex h-14 items-center px-4 shrink-0">
+                    <div className="flex h-[50px] items-center px-5 shrink-0 mt-2">
                         {!collapsed && (
                             <Link href={`/${locale}`}>
-                                <Logo size="md" variant="light" />
+                                <Logo size="sm" variant="light" />
                             </Link>
                         )}
                         <Button
@@ -248,13 +180,42 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                             onClick={() => setCollapsed(!collapsed)}
                             className={cn('ml-auto h-8 w-8 text-muted-foreground hover:text-foreground', collapsed && 'mx-auto')}
                         >
-                            {collapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
+                            {collapsed ? <PanelLeft className="size-5" /> : <PanelLeftClose className="size-5" />}
                         </Button>
                     </div>
 
                     <div className="flex flex-col flex-1 min-h-0">
-                        {/* Main Menu Items */}
-                        <div className="px-2 py-2 space-y-1">
+                        {/* Main Menu & New Chat */}
+                        <div className="px-3 py-3 space-y-1">
+                            {/* New Chat Button */}
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link
+                                        href={`/${locale}`}
+                                        className={cn(
+                                            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                                            pathname === `/${locale}`
+                                                ? 'bg-sidebar-accent dark:bg-zinc-800 text-foreground font-medium'
+                                                : 'text-muted-foreground hover:bg-sidebar-accent dark:hover:bg-zinc-800/50 hover:text-foreground',
+                                            collapsed && 'justify-center px-0 w-9 mx-auto py-2',
+                                        )}
+                                    >
+                                        <MessageSquarePlus className="h-4 w-4 shrink-0" />
+                                        {!collapsed && (
+                                            <span className="flex-1 truncate">
+                                                {t('newChat')}
+                                            </span>
+                                        )}
+                                    </Link>
+                                </TooltipTrigger>
+                                {collapsed && (
+                                    <TooltipContent side="right">
+                                        {t('newChat')}
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+
+                            {/* Menu Items */}
                             {menuItems.map((item) => {
                                 const isActive = pathname.includes(item.href) && (item.href !== '/' || pathname === `/${locale}`);
                                 return (
@@ -263,14 +224,14 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                                             <Link
                                                 href={`/${locale}${item.href}`}
                                                 className={cn(
-                                                    'flex items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors h-9',
+                                                    'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
                                                     isActive
-                                                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-none'
-                                                        : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground',
-                                                    collapsed && 'justify-center px-0 w-9 mx-auto',
+                                                        ? 'bg-sidebar-accent dark:bg-zinc-800 text-foreground font-medium'
+                                                        : 'text-muted-foreground hover:bg-sidebar-accent dark:hover:bg-zinc-800/50 hover:text-foreground',
+                                                    collapsed && 'justify-center px-0 w-9 mx-auto py-2',
                                                 )}
                                             >
-                                                <item.icon className={cn('h-4 w-4 shrink-0', isActive ? "text-sidebar-primary" : "text-muted-foreground", item.isNew && 'text-rose-500')} />
+                                                <item.icon className={cn('h-4 w-4 shrink-0', isActive ? "text-foreground" : "text-muted-foreground", item.isNew && 'text-rose-500')} />
                                                 {!collapsed && (
                                                     <span className={cn('flex-1 truncate', item.isNew && 'text-rose-500')}>
                                                         {t(item.labelKey)}
@@ -296,7 +257,7 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                         {!collapsed && user ? (
                             <ScrollArea className="flex-1 px-4">
                                 <div className="py-2">
-                                    <div className="mb-2 px-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                                    <div className="mb-2 px-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider hidden">
                                         {t('history') || 'History'}
                                     </div>
                                     <ChatHistoryList locale={locale} pathname={pathname} />

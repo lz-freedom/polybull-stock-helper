@@ -9,6 +9,7 @@ import {
     jsonb,
     boolean,
     index,
+    uniqueIndex,
     uuid,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
@@ -406,6 +407,8 @@ export const reports = pgTable(
             .references(() => agentRuns.id, { onDelete: 'cascade' }),
         // 报告类型: consensus, research
         reportType: varchar('report_type', { length: 20 }).notNull(),
+        // 报告状态: draft, completed, failed
+        status: varchar('status', { length: 20 }).notNull().default('completed'),
         // 报告标题
         title: varchar('title', { length: 500 }),
         // 报告摘要 / one-liner
@@ -416,6 +419,8 @@ export const reports = pgTable(
         structuredData: jsonb('structured_data'),
         // 引用的数据源
         sources: jsonb('sources'),
+        // 关联的聊天线程 (可选)
+        threadId: uuid('thread_id'),
         // 时间戳
         createdAt: timestamp('created_at').notNull().defaultNow(),
         updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -522,6 +527,63 @@ export const chatMessages = pgTable(
 );
 
 // ============================================
+// Usage Counters - 模式计次
+// ============================================
+
+export const usageCounters = pgTable(
+    'usage_counters',
+    {
+        id: serial('id').primaryKey(),
+        userId: integer('user_id').references(() => users.id, {
+            onDelete: 'cascade',
+        }),
+        mode: varchar('mode', { length: 30 }).notNull(),
+        used: integer('used').notNull().default(0),
+        limit: integer('limit').notNull(),
+        periodKey: varchar('period_key', { length: 32 }).notNull(),
+        createdAt: timestamp('created_at').notNull().defaultNow(),
+        updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    },
+    (table) => [
+        index('usage_counters_user_id_idx').on(table.userId),
+        index('usage_counters_mode_idx').on(table.mode),
+        index('usage_counters_period_key_idx').on(table.periodKey),
+        uniqueIndex('usage_counters_user_mode_period_key_idx').on(
+            table.userId,
+            table.mode,
+            table.periodKey,
+        ),
+    ],
+);
+
+// ============================================
+// Usage Logs - 计次日志
+// ============================================
+
+export const usageLogs = pgTable(
+    'usage_logs',
+    {
+        id: serial('id').primaryKey(),
+        userId: integer('user_id').references(() => users.id, {
+            onDelete: 'set null',
+        }),
+        mode: varchar('mode', { length: 30 }).notNull(),
+        runId: integer('agent_run_id').references(() => agentRuns.id, {
+            onDelete: 'set null',
+        }),
+        sessionId: uuid('session_id'),
+        delta: integer('delta').notNull(),
+        reason: varchar('reason', { length: 200 }),
+        createdAt: timestamp('created_at').notNull().defaultNow(),
+    },
+    (table) => [
+        index('usage_logs_user_id_idx').on(table.userId),
+        index('usage_logs_mode_idx').on(table.mode),
+        index('usage_logs_created_at_idx').on(table.createdAt),
+    ],
+);
+
+// ============================================
 // Agent 相关关系定义
 // ============================================
 
@@ -598,6 +660,24 @@ export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
     }),
 }));
 
+export const usageCountersRelations = relations(usageCounters, ({ one }) => ({
+    user: one(users, {
+        fields: [usageCounters.userId],
+        references: [users.id],
+    }),
+}));
+
+export const usageLogsRelations = relations(usageLogs, ({ one }) => ({
+    user: one(users, {
+        fields: [usageLogs.userId],
+        references: [users.id],
+    }),
+    agentRun: one(agentRuns, {
+        fields: [usageLogs.runId],
+        references: [agentRuns.id],
+    }),
+}));
+
 // ============================================
 // Agent 相关类型导出
 // ============================================
@@ -625,6 +705,12 @@ export type NewChatSession = typeof chatSessions.$inferInsert;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type NewChatMessage = typeof chatMessages.$inferInsert;
+
+export type UsageCounter = typeof usageCounters.$inferSelect;
+export type NewUsageCounter = typeof usageCounters.$inferInsert;
+
+export type UsageLog = typeof usageLogs.$inferSelect;
+export type NewUsageLog = typeof usageLogs.$inferInsert;
 
 // Agent Run with relations
 export type AgentRunWithSteps = AgentRun & {

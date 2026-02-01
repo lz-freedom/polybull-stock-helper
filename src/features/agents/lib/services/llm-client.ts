@@ -9,6 +9,12 @@ const openrouter = createOpenAI({
     baseURL: 'https://openrouter.ai/api/v1',
 });
 
+const OPENROUTER_PROVIDER_OPTIONS = {
+    openai: {
+        store: false,
+    },
+} as const;
+
 // 支持的模型列表
 export const MODELS = {
     MINIMAX_M2: 'minimax/minimax-m2-her',
@@ -23,7 +29,7 @@ export type ModelId = (typeof MODELS)[keyof typeof MODELS];
 
 // 获取指定模型实例
 export function getModel(modelId: ModelId = MODELS.DEFAULT) {
-    return openrouter(modelId);
+    return openrouter.chat(modelId);
 }
 
 /**
@@ -101,6 +107,7 @@ Respond with valid JSON only, no markdown code blocks, no explanations.`;
         prompt: structuredPrompt,
         system: system ? `${system}\n\nAlways respond with valid JSON matching the requested schema.` : 'Always respond with valid JSON matching the requested schema.',
         temperature,
+        providerOptions: OPENROUTER_PROVIDER_OPTIONS,
     };
 
     // 如果指定了超时时间，创建 AbortSignal
@@ -151,6 +158,7 @@ export async function generateTextResponse(
         prompt,
         system,
         temperature,
+        providerOptions: OPENROUTER_PROVIDER_OPTIONS,
     };
 
     // 如果指定了超时时间，创建 AbortSignal
@@ -202,6 +210,7 @@ export function createTextStream(
         prompt,
         system,
         temperature,
+        providerOptions: OPENROUTER_PROVIDER_OPTIONS,
         onFinish: onFinish ? ({ text }) => onFinish(text) : undefined,
         tools,
     };

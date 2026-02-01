@@ -10,6 +10,217 @@
         "prompt4": "最近有哪些影响股市的重大新闻？",
         "disclaimer": "AI 可能会出错。请核实重要信息。投资有风险，入市需谨慎。"
     },
+    "homePage": {
+        "nav": {
+            "links": [
+                {
+                    "label": "产品",
+                    "href": "#product"
+                },
+                {
+                    "label": "模型",
+                    "href": "#models"
+                },
+                {
+                    "label": "共识",
+                    "href": "#consensus"
+                },
+                {
+                    "label": "回放",
+                    "href": "#replay"
+                }
+            ],
+            "login": "登录",
+            "contact": "联系我们",
+            "cta": "开始使用"
+        },
+        "hero": {
+            "badge": "AI 股票研究",
+            "titleLine1": "先看懂这只股票",
+            "titleLine2": "再做投资判断",
+            "subtitle": "7 大模型共识报告，把财报、新闻与指标翻译成可解释的研究结论。",
+            "primaryCta": "开始生成",
+            "secondaryCta": "查看示例",
+            "note": "仅供研究参考，不构成投资建议。",
+            "modelPill": "7 模型共识",
+            "modelLabel": "参与模型"
+        },
+        "preview": {
+            "title": "共识看板",
+            "badge": "实时",
+            "metrics": [
+                {
+                    "label": "共识得分",
+                    "value": "78%"
+                },
+                {
+                    "label": "风险提示",
+                    "value": "2"
+                },
+                {
+                    "label": "证据来源",
+                    "value": "14 条"
+                }
+            ],
+            "chartOneLabel": "价格反应",
+            "chartOneValue": "+4.8%",
+            "chartTwoLabel": "基本面趋势",
+            "chartTwoValue": "环比"
+        },
+        "stats": {
+            "items": [
+                {
+                    "value": "8.2k",
+                    "label": "已生成报告"
+                },
+                {
+                    "value": "3.4x",
+                    "label": "研究提速"
+                },
+                {
+                    "value": "92%",
+                    "label": "共识一致度"
+                }
+            ]
+        },
+        "models": {
+            "kicker": "模型矩阵",
+            "title": "七个模型，一份共识报告。",
+            "subtitle": "并行分析、观点对比、证据合成，每一步都可追溯。"
+        },
+        "sdk": {
+            "codeTitle": "共识工作流",
+            "codeBadge": "7 模型",
+            "codeLabel": "Consensus API",
+            "code": [
+                "const report = await consensusWorkflow({",
+                "  ticker: 'NVDA',",
+                "  horizon: '3Y',",
+                "  tools: ['financials', 'news', 'technicals'],",
+                "  models: ['gpt-4.1', 'claude-3.5', 'deepseek-v3', 'qwen', 'kimi', 'minimax', 'grok'],",
+                "});",
+                "",
+                "return report.consensusSummary;"
+            ],
+            "primaryCta": "查看文档",
+            "secondaryCta": "查看流程"
+        },
+        "consensus": {
+            "kicker": "工作流",
+            "title": "阶段、工具、来源、分支状态一目了然",
+            "subtitle": "从数据获取到多模型综合，每一步都可追踪。",
+            "items": [
+                {
+                    "title": "阶段时间线",
+                    "description": "展示每个阶段的耗时与结果。"
+                },
+                {
+                    "title": "工具证据",
+                    "description": "查看工具调用、参数与结果。"
+                },
+                {
+                    "title": "来源引用",
+                    "description": "每条结论都绑定可验证的证据。"
+                },
+                {
+                    "title": "分支状态",
+                    "description": "了解各模型如何贡献共识。"
+                }
+            ]
+        },
+        "replay": {
+            "kicker": "回放",
+            "title": "完整回放每一次运行",
+            "subtitle": "控制速度、查看事件、跳转任意阶段。",
+            "events": [
+                {
+                    "title": "阶段：获取数据",
+                    "meta": "0.6s"
+                },
+                {
+                    "title": "工具：getStockSnapshot",
+                    "meta": "成功"
+                },
+                {
+                    "title": "来源：12 条引用",
+                    "meta": "2.3s"
+                },
+                {
+                    "title": "分支：7 模型完成",
+                    "meta": "4.9s"
+                }
+            ],
+            "highlight": "数据流",
+            "heading": "回放完整共识流",
+            "description": "审计每个事件，结合 Context Pack 复现报告。"
+        },
+        "faq": {
+            "kicker": "常见问题",
+            "title": "你关心的，我们都答",
+            "subtitle": "使用 AI 做股票研究前，大家最常问的问题。",
+            "items": [
+                {
+                    "question": "这是投资建议吗？",
+                    "answer": "不是。我们只提供研究与背景信息。"
+                },
+                {
+                    "question": "共识如何生成？",
+                    "answer": "7 大模型并行分析，量化一致度后综合输出。"
+                },
+                {
+                    "question": "数据来自哪里？",
+                    "answer": "财报、市场行情与精选新闻来源。"
+                }
+            ]
+        },
+        "cta": {
+            "kicker": "准备开始",
+            "title": "让每次投前研究更清晰",
+            "subtitle": "先看懂、再判断，把决策建立在证据上。",
+            "button": "立即开始"
+        },
+        "footer": {
+            "columns": [
+                {
+                    "title": "产品",
+                    "links": [
+                        "概览",
+                        "共识",
+                        "回放",
+                        "报告"
+                    ]
+                },
+                {
+                    "title": "公司",
+                    "links": [
+                        "关于我们",
+                        "招聘",
+                        "博客",
+                        "联系我们"
+                    ]
+                },
+                {
+                    "title": "资源",
+                    "links": [
+                        "文档",
+                        "更新日志",
+                        "支持",
+                        "状态"
+                    ]
+                },
+                {
+                    "title": "合规",
+                    "links": [
+                        "安全",
+                        "隐私",
+                        "条款",
+                        "合规"
+                    ]
+                }
+            ],
+            "rights": "保留所有权利。"
+        }
+    },
     "marketing": {
         "hero": {
             "badge": "AI Market Copilot",
@@ -244,7 +455,10 @@
         "or": "或",
         "privacyPolicy": "隐私政策",
         "termsOfService": "服务条款",
-        "agreeText": "*创建账户即表示您同意 iVibeFinance 的"
+        "agreeText": "创建账户即表示您同意 iVibeFinance 的",
+        "inviteFriends": "邀请好友",
+        "upgradePlan": "升级计划",
+        "history": "历史"
     },
     "auth": {
         "email": "邮箱",

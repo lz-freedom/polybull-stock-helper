@@ -1,243 +1,558 @@
 {
-  "home": {
-    "welcomeTitle": "What financial insights are you exploring today?",
-    "welcomeSubtitle": "Ask me anything about stocks, markets, or investments",
-    "inputPlaceholder": "Ask me anything about stocks, markets, or investments...",
-    "tryThese": "Try these questions",
-    "prompt1": "Analyze Apple's (AAPL) latest earnings report",
-    "prompt2": "Which sectors are worth watching in today's market?",
-    "prompt3": "Compare Tesla and BYD's valuations",
-    "prompt4": "What major news is affecting the stock market recently?",
-    "disclaimer": "AI can make mistakes. Please verify important information. Investing involves risk."
-  },
-  "marketing": {
-    "hero": {
-      "badge": "AI Market Copilot",
-      "headlineLeading": "Decode global equities",
-      "headlineHighlight": "before Wall Street moves",
-      "subheading": "PolyBull unifies institutional data, AI signals, and human context so modern desks can see every rotation before it hits the tape.",
-      "primaryCta": "Launch PolyBull",
-      "secondaryCta": "See platform tour"
+    "home": {
+        "welcomeTitle": "What financial insights are you exploring today?",
+        "welcomeSubtitle": "Ask me anything about stocks, markets, or investments",
+        "inputPlaceholder": "Ask me anything about stocks, markets, or investments...",
+        "tryThese": "Try these questions",
+        "prompt1": "Analyze Apple's (AAPL) latest earnings report",
+        "prompt2": "Which sectors are worth watching in today's market?",
+        "prompt3": "Compare Tesla and BYD's valuations",
+        "prompt4": "What major news is affecting the stock market recently?",
+        "disclaimer": "AI can make mistakes. Please verify important information. Investing involves risk."
     },
-    "stats": {
-      "items": [
-        { "value": "5,800+", "label": "Stocks monitored" },
-        { "value": "$2.3T", "label": "Capital tracked daily" },
-        { "value": "92%", "label": "Signal precision" },
-        { "value": "<90ms", "label": "Data latency" }
-      ]
+    "homePage": {
+        "nav": {
+            "links": [
+                {
+                    "label": "Product",
+                    "href": "#product"
+                },
+                {
+                    "label": "Models",
+                    "href": "#models"
+                },
+                {
+                    "label": "Consensus",
+                    "href": "#consensus"
+                },
+                {
+                    "label": "Replay",
+                    "href": "#replay"
+                }
+            ],
+            "login": "Sign in",
+            "contact": "Contact",
+            "cta": "Get started"
+        },
+        "hero": {
+            "badge": "AI Stock Research",
+            "titleLine1": "Understand a stock",
+            "titleLine2": "before you invest",
+            "subtitle": "7-model consensus reports that translate filings, news, and metrics into clear, explainable insights.",
+            "primaryCta": "Start a report",
+            "secondaryCta": "View sample",
+            "note": "For research only. Not investment advice.",
+            "modelPill": "7 Model Consensus",
+            "modelLabel": "Models in the loop"
+        },
+        "preview": {
+            "title": "Consensus dashboard",
+            "badge": "Live",
+            "metrics": [
+                {
+                    "label": "Consensus score",
+                    "value": "78%"
+                },
+                {
+                    "label": "Risk flags",
+                    "value": "2"
+                },
+                {
+                    "label": "Evidence",
+                    "value": "14 sources"
+                }
+            ],
+            "chartOneLabel": "Price reaction",
+            "chartOneValue": "+4.8%",
+            "chartTwoLabel": "Fundamentals trend",
+            "chartTwoValue": "QoQ"
+        },
+        "stats": {
+            "items": [
+                {
+                    "value": "8.2k",
+                    "label": "Reports generated"
+                },
+                {
+                    "value": "3.4x",
+                    "label": "Research speed-up"
+                },
+                {
+                    "value": "92%",
+                    "label": "Consensus alignment"
+                }
+            ]
+        },
+        "models": {
+            "kicker": "Models",
+            "title": "Seven models. One consensus report.",
+            "subtitle": "Run parallel agent analyses, compare viewpoints, then synthesize with evidence you can inspect."
+        },
+        "sdk": {
+            "codeTitle": "Consensus workflow",
+            "codeBadge": "7 models",
+            "codeLabel": "Consensus API",
+            "code": [
+                "const report = await consensusWorkflow({",
+                "  ticker: 'NVDA',",
+                "  horizon: '3Y',",
+                "  tools: ['financials', 'news', 'technicals'],",
+                "  models: ['gpt-4.1', 'claude-3.5', 'deepseek-v3', 'qwen', 'kimi', 'minimax', 'grok'],",
+                "});",
+                "",
+                "return report.consensusSummary;"
+            ],
+            "primaryCta": "Read docs",
+            "secondaryCta": "See workflow"
+        },
+        "consensus": {
+            "kicker": "Workflow",
+            "title": "Stages, tools, sources, branch status",
+            "subtitle": "Every step is traceable—from data fetch to multi-model synthesis.",
+            "items": [
+                {
+                    "title": "Stage timeline",
+                    "description": "Track stages with duration and outputs."
+                },
+                {
+                    "title": "Tool evidence",
+                    "description": "Inspect tool calls, parameters, and results."
+                },
+                {
+                    "title": "Source grounding",
+                    "description": "Attach citations and evidence to every claim."
+                },
+                {
+                    "title": "Branch status",
+                    "description": "See how each model contributes to consensus."
+                }
+            ]
+        },
+        "replay": {
+            "kicker": "Replay",
+            "title": "Play back every run",
+            "subtitle": "Control speed, inspect events, and jump to any stage.",
+            "events": [
+                {
+                    "title": "Stage: Fetch data",
+                    "meta": "0.6s"
+                },
+                {
+                    "title": "Tool: getStockSnapshot",
+                    "meta": "ok"
+                },
+                {
+                    "title": "Source: 12 citations",
+                    "meta": "2.3s"
+                },
+                {
+                    "title": "Branch: 7 models complete",
+                    "meta": "4.9s"
+                }
+            ],
+            "highlight": "Data stream",
+            "heading": "Replay the entire consensus stream",
+            "description": "Audit every event and reproduce reports with full context packs."
+        },
+        "faq": {
+            "kicker": "FAQ",
+            "title": "Questions, answered",
+            "subtitle": "What teams ask before using AI for stock research.",
+            "items": [
+                {
+                    "question": "Is this investment advice?",
+                    "answer": "No. We provide research and context only."
+                },
+                {
+                    "question": "How is consensus built?",
+                    "answer": "We run 7 models in parallel, score alignment, then synthesize the shared view."
+                },
+                {
+                    "question": "What data sources are used?",
+                    "answer": "Financial statements, market data, and curated news sources."
+                }
+            ]
+        },
+        "cta": {
+            "kicker": "Ready to research",
+            "title": "Bring clarity to every stock decision",
+            "subtitle": "Understand the story, the risks, and the numbers before you invest.",
+            "button": "Start now"
+        },
+        "footer": {
+            "columns": [
+                {
+                    "title": "Product",
+                    "links": [
+                        "Overview",
+                        "Consensus",
+                        "Replay",
+                        "Reports"
+                    ]
+                },
+                {
+                    "title": "Company",
+                    "links": [
+                        "About",
+                        "Careers",
+                        "Blog",
+                        "Contact"
+                    ]
+                },
+                {
+                    "title": "Resources",
+                    "links": [
+                        "Docs",
+                        "Changelog",
+                        "Support",
+                        "Status"
+                    ]
+                },
+                {
+                    "title": "Legal",
+                    "links": [
+                        "Security",
+                        "Privacy",
+                        "Terms",
+                        "Compliance"
+                    ]
+                }
+            ],
+            "rights": "All rights reserved."
+        }
     },
-    "ticker": {
-      "title": "Live Signals",
-      "items": [
-        { "symbol": "SPY", "label": "US Momentum", "change": "+1.42%" },
-        { "symbol": "NVDA", "label": "Options Sweep", "change": "+3.58%" },
-        { "symbol": "TSLA", "label": "Short Covering", "change": "+2.11%" },
-        { "symbol": "ASML", "label": "EU Tech Rotation", "change": "-0.84%" },
-        { "symbol": "^N225", "label": "Tokyo Session", "change": "+0.63%" }
-      ]
+    "marketing": {
+        "hero": {
+            "badge": "AI Market Copilot",
+            "headlineLeading": "Decode global equities",
+            "headlineHighlight": "before Wall Street moves",
+            "subheading": "PolyBull unifies institutional data, AI signals, and human context so modern desks can see every rotation before it hits the tape.",
+            "primaryCta": "Launch PolyBull",
+            "secondaryCta": "See platform tour"
+        },
+        "stats": {
+            "items": [
+                {
+                    "value": "5,800+",
+                    "label": "Stocks monitored"
+                },
+                {
+                    "value": "$2.3T",
+                    "label": "Capital tracked daily"
+                },
+                {
+                    "value": "92%",
+                    "label": "Signal precision"
+                },
+                {
+                    "value": "<90ms",
+                    "label": "Data latency"
+                }
+            ]
+        },
+        "ticker": {
+            "title": "Live Signals",
+            "items": [
+                {
+                    "symbol": "SPY",
+                    "label": "US Momentum",
+                    "change": "+1.42%"
+                },
+                {
+                    "symbol": "NVDA",
+                    "label": "Options Sweep",
+                    "change": "+3.58%"
+                },
+                {
+                    "symbol": "TSLA",
+                    "label": "Short Covering",
+                    "change": "+2.11%"
+                },
+                {
+                    "symbol": "ASML",
+                    "label": "EU Tech Rotation",
+                    "change": "-0.84%"
+                },
+                {
+                    "symbol": "^N225",
+                    "label": "Tokyo Session",
+                    "change": "+0.63%"
+                }
+            ]
+        },
+        "trust": {
+            "title": "Trusted by desks at",
+            "partners": [
+                "Atlas Capital",
+                "Northwind Advisors",
+                "Emerald Ridge",
+                "Helios Macro"
+            ]
+        },
+        "features": {
+            "title": "Institutional-grade intelligence",
+            "subtitle": "Everything you need to interrogate equities in one terminal.",
+            "items": [
+                {
+                    "title": "Predictive Signals",
+                    "description": "Proprietary ML surfaces unusual flow, liquidity vacuums, and lead-lag anomalies."
+                },
+                {
+                    "title": "Scenario Lab",
+                    "description": "Stress portfolios against macro regimes, rate paths, and sector rotations in seconds."
+                },
+                {
+                    "title": "Risk Radar",
+                    "description": "Live factor exposures, crowding scores, and downside breakpoints for every ticker."
+                },
+                {
+                    "title": "Automation Stack",
+                    "description": "Route alerts to Slack, Symphony, or OMS when PolyBull spots asymmetric risk."
+                }
+            ]
+        },
+        "live": {
+            "title": "Live intel stream",
+            "insightTitle": "AI Insight",
+            "insightBody": "Financials factor reversing as energy bid accelerates. Watch regional banks for catch-up and fade extended semi strength.",
+            "manualTitle": "Analyst Desk",
+            "manualBody": "Desk notes rotation out of megacap tech into cyclicals after CPI surprise. Monitoring liquidity pockets in airlines and homebuilders.",
+            "eventsTitle": "Recent flow alerts",
+            "events": [
+                {
+                    "title": "Options sweep",
+                    "description": "NVDA 0DTE call wall triggered at $140 strike."
+                },
+                {
+                    "title": "Dark pool print",
+                    "description": "$38M block in LLY executes 12 bps above NBBO."
+                },
+                {
+                    "title": "Rebalance pulse",
+                    "description": "CTAs adding $1.1B exposure to S&P futures into close."
+                }
+            ]
+        },
+        "markets": {
+            "title": "Global market coverage",
+            "subtitle": "PolyBull ingests equity, ETF, and futures data across every major venue.",
+            "regions": [
+                {
+                    "name": "Americas",
+                    "exchanges": [
+                        "NYSE",
+                        "NASDAQ",
+                        "B3"
+                    ],
+                    "note": "90% US notional tracked"
+                },
+                {
+                    "name": "EMEA",
+                    "exchanges": [
+                        "LSE",
+                        "XETRA",
+                        "Euronext"
+                    ],
+                    "note": "Cross-asset signals + FX overlay"
+                },
+                {
+                    "name": "APAC",
+                    "exchanges": [
+                        "TSE",
+                        "HKEX",
+                        "ASX"
+                    ],
+                    "note": "Overnight session heatmaps"
+                }
+            ]
+        },
+        "partners": {
+            "title": "Data & infrastructure",
+            "logos": [
+                "Nasdaq",
+                "NYSE",
+                "Bloomberg",
+                "Refinitiv",
+                "FactSet",
+                "Snowflake"
+            ]
+        },
+        "faq": {
+            "title": "Questions, answered",
+            "subtitle": "Everything teams ask before moving to PolyBull.",
+            "items": [
+                {
+                    "question": "Where does PolyBull source data?",
+                    "answer": "We stream equities, options, and macro feeds from top-tier venues plus proprietary sentiment pipelines."
+                },
+                {
+                    "question": "Do you replace the analyst desk?",
+                    "answer": "PolyBull augments humans with faster context. Desks keep control over risk and execution."
+                },
+                {
+                    "question": "Can we pipe alerts into our workflow?",
+                    "answer": "Yes. PolyBull delivers to Slack, Teams, Symphony, Bloomberg IB, and custom webhooks."
+                },
+                {
+                    "question": "What compliance safeguards exist?",
+                    "answer": "SOC 2 Type II, regional data residency, SSO, audit trails, and fine-grained permissions ship standard."
+                }
+            ]
+        },
+        "cta": {
+            "title": "Ready to see around the next rotation?",
+            "subtitle": "Join funds that move faster with PolyBull's AI market copilot.",
+            "primary": "Start free trial",
+            "secondary": "Talk to our team"
+        }
     },
-    "trust": {
-      "title": "Trusted by desks at",
-      "partners": ["Atlas Capital", "Northwind Advisors", "Emerald Ridge", "Helios Macro"]
+    "common": {
+        "appName": "iVibeFinance",
+        "signIn": "Sign In",
+        "signUp": "Sign Up",
+        "signOut": "Sign Out",
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "admin": "Admin",
+        "home": "Home",
+        "pricing": "Pricing",
+        "loading": "Loading...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "create": "Create",
+        "search": "Search",
+        "back": "Back",
+        "next": "Next",
+        "previous": "Previous",
+        "submit": "Submit",
+        "confirm": "Confirm",
+        "success": "Success",
+        "error": "Error",
+        "warning": "Warning"
     },
-    "features": {
-      "title": "Institutional-grade intelligence",
-      "subtitle": "Everything you need to interrogate equities in one terminal.",
-      "items": [
-        { "title": "Predictive Signals", "description": "Proprietary ML surfaces unusual flow, liquidity vacuums, and lead-lag anomalies." },
-        { "title": "Scenario Lab", "description": "Stress portfolios against macro regimes, rate paths, and sector rotations in seconds." },
-        { "title": "Risk Radar", "description": "Live factor exposures, crowding scores, and downside breakpoints for every ticker." },
-        { "title": "Automation Stack", "description": "Route alerts to Slack, Symphony, or OMS when PolyBull spots asymmetric risk." }
-      ]
+    "sidebar": {
+        "newChat": "New Chat",
+        "financeWiki": "Finance Wiki",
+        "marketPulse": "Market Pulse",
+        "newFeature": "New",
+        "appearance": "Appearance",
+        "language": "Language",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System",
+        "learnMore": "Learn More",
+        "shareWithFriends": "Share Surf with friends",
+        "signInOrUp": "Sign In / Sign Up",
+        "upgrade": "Upgrade",
+        "redeemCode": "Redeem Code",
+        "settings": "Settings",
+        "signOut": "Sign Out",
+        "accountMenu": "Account menu",
+        "enterEmail": "Enter your email",
+        "continue": "Continue",
+        "or": "or",
+        "privacyPolicy": "Privacy Policy",
+        "termsOfService": "Terms of Service",
+        "agreeText": "*By creating an account, you agree to iVibeFinance's",
+        "inviteFriends": "Invite Friends",
+        "upgradePlan": "Upgrade Plan",
+        "history": "History"
     },
-    "live": {
-      "title": "Live intel stream",
-      "insightTitle": "AI Insight",
-      "insightBody": "Financials factor reversing as energy bid accelerates. Watch regional banks for catch-up and fade extended semi strength.",
-      "manualTitle": "Analyst Desk",
-      "manualBody": "Desk notes rotation out of megacap tech into cyclicals after CPI surprise. Monitoring liquidity pockets in airlines and homebuilders.",
-      "eventsTitle": "Recent flow alerts",
-      "events": [
-        { "title": "Options sweep", "description": "NVDA 0DTE call wall triggered at $140 strike." },
-        { "title": "Dark pool print", "description": "$38M block in LLY executes 12 bps above NBBO." },
-        { "title": "Rebalance pulse", "description": "CTAs adding $1.1B exposure to S&P futures into close." }
-      ]
+    "auth": {
+        "email": "Email",
+        "password": "Password",
+        "emailPlaceholder": "Enter your email",
+        "passwordPlaceholder": "Enter your password",
+        "signInTitle": "Sign in to your account",
+        "signUpTitle": "Create your account",
+        "googleSignIn": "Continue with Google",
+        "magicLink": "Send Magic Link",
+        "magicLinkSent": "Check your email for the magic link!",
+        "orContinueWith": "Or continue with",
+        "newToPlatform": "New to our platform?",
+        "alreadyHaveAccount": "Already have an account?",
+        "createAccount": "Create an account",
+        "signInToExisting": "Sign in to existing account",
+        "forgotPassword": "Forgot password?",
+        "invalidCredentials": "Invalid email or password. Please try again.",
+        "accountCreated": "Account created successfully!",
+        "signedOut": "You have been signed out."
     },
-    "markets": {
-      "title": "Global market coverage",
-      "subtitle": "PolyBull ingests equity, ETF, and futures data across every major venue.",
-      "regions": [
-        { "name": "Americas", "exchanges": ["NYSE", "NASDAQ", "B3"], "note": "90% US notional tracked" },
-        { "name": "EMEA", "exchanges": ["LSE", "XETRA", "Euronext"], "note": "Cross-asset signals + FX overlay" },
-        { "name": "APAC", "exchanges": ["TSE", "HKEX", "ASX"], "note": "Overnight session heatmaps" }
-      ]
+    "email": {
+        "magicLink": {
+            "subject": "Sign in to iVibeFinance",
+            "title": "Sign in",
+            "body": "Use the button below to sign in. This link will expire soon.",
+            "button": "Sign in to iVibeFinance",
+            "fallback": "If the button doesn't work, copy and paste this link into your browser:",
+            "footer": "If you didn't request this email, you can safely ignore it."
+        },
+        "footer": {
+            "followTitle": "Follow us for updates, tutorials, and community highlights:",
+            "updatesLine": "To help make your experience the best it can be, we’ll send occasional product updates. If you no longer want to receive updates, feel free to {unsubscribe} at any time.",
+            "unsubscribe": "unsubscribe"
+        }
     },
-    "partners": {
-      "title": "Data & infrastructure",
-      "logos": ["Nasdaq", "NYSE", "Bloomberg", "Refinitiv", "FactSet", "Snowflake"]
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome back",
+        "overview": "Overview",
+        "activity": "Activity",
+        "team": "Team",
+        "general": "General",
+        "security": "Security",
+        "billing": "Billing",
+        "noActivity": "No activity yet"
     },
-    "faq": {
-      "title": "Questions, answered",
-      "subtitle": "Everything teams ask before moving to PolyBull.",
-      "items": [
-        { "question": "Where does PolyBull source data?", "answer": "We stream equities, options, and macro feeds from top-tier venues plus proprietary sentiment pipelines." },
-        { "question": "Do you replace the analyst desk?", "answer": "PolyBull augments humans with faster context. Desks keep control over risk and execution." },
-        { "question": "Can we pipe alerts into our workflow?", "answer": "Yes. PolyBull delivers to Slack, Teams, Symphony, Bloomberg IB, and custom webhooks." },
-        { "question": "What compliance safeguards exist?", "answer": "SOC 2 Type II, regional data residency, SSO, audit trails, and fine-grained permissions ship standard." }
-      ]
+    "admin": {
+        "title": "Admin Dashboard",
+        "users": "Users",
+        "teams": "Teams",
+        "subscriptions": "Subscriptions",
+        "analytics": "Analytics",
+        "activityLogs": "Activity Logs",
+        "systemSettings": "System Settings",
+        "totalUsers": "Total Users",
+        "totalTeams": "Total Teams",
+        "activeSubscriptions": "Active Subscriptions",
+        "recentActivity": "Recent Activity",
+        "userManagement": "User Management",
+        "roleManagement": "Role Management",
+        "superAdmin": "Super Admin",
+        "adminRole": "Admin",
+        "memberRole": "Member"
     },
-    "cta": {
-      "title": "Ready to see around the next rotation?",
-      "subtitle": "Join funds that move faster with PolyBull's AI market copilot.",
-      "primary": "Start free trial",
-      "secondary": "Talk to our team"
+    "team": {
+        "title": "Team",
+        "members": "Members",
+        "inviteMember": "Invite Member",
+        "removeMember": "Remove Member",
+        "owner": "Owner",
+        "member": "Member",
+        "pending": "Pending",
+        "invitationSent": "Invitation sent successfully",
+        "memberRemoved": "Member removed successfully"
+    },
+    "settings": {
+        "title": "Settings",
+        "profile": "Profile",
+        "account": "Account",
+        "notifications": "Notifications",
+        "updateProfile": "Update Profile",
+        "changePassword": "Change Password",
+        "deleteAccount": "Delete Account",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm Password",
+        "passwordUpdated": "Password updated successfully",
+        "profileUpdated": "Profile updated successfully"
+    },
+    "errors": {
+        "generic": "Something went wrong. Please try again.",
+        "notFound": "Page not found",
+        "unauthorized": "You are not authorized to access this page",
+        "serverError": "Server error. Please try again later."
     }
-  },
-  "common": {
-    "appName": "iVibeFinance",
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
-    "signOut": "Sign Out",
-    "dashboard": "Dashboard",
-    "settings": "Settings",
-    "admin": "Admin",
-    "home": "Home",
-    "pricing": "Pricing",
-    "loading": "Loading...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "create": "Create",
-    "search": "Search",
-    "back": "Back",
-    "next": "Next",
-    "previous": "Previous",
-    "submit": "Submit",
-    "confirm": "Confirm",
-    "success": "Success",
-    "error": "Error",
-    "warning": "Warning"
-  },
-  "sidebar": {
-    "newChat": "New Chat",
-    "financeWiki": "Finance Wiki",
-    "marketPulse": "Market Pulse",
-    "newFeature": "New",
-    "appearance": "Appearance",
-    "language": "Language",
-    "light": "Light",
-    "dark": "Dark",
-    "system": "System",
-    "learnMore": "Learn More",
-    "shareWithFriends": "Share Surf with friends",
-    "signInOrUp": "Sign In / Sign Up",
-    "upgrade": "Upgrade",
-    "redeemCode": "Redeem Code",
-    "settings": "Settings",
-    "signOut": "Sign Out",
-    "accountMenu": "Account menu",
-    "enterEmail": "Enter your email",
-    "continue": "Continue",
-    "or": "or",
-    "privacyPolicy": "Privacy Policy",
-    "termsOfService": "Terms of Service",
-    "agreeText": "*By creating an account, you agree to iVibeFinance's"
-  },
-  "auth": {
-    "email": "Email",
-    "password": "Password",
-    "emailPlaceholder": "Enter your email",
-    "passwordPlaceholder": "Enter your password",
-    "signInTitle": "Sign in to your account",
-    "signUpTitle": "Create your account",
-    "googleSignIn": "Continue with Google",
-    "magicLink": "Send Magic Link",
-    "magicLinkSent": "Check your email for the magic link!",
-    "orContinueWith": "Or continue with",
-    "newToPlatform": "New to our platform?",
-    "alreadyHaveAccount": "Already have an account?",
-    "createAccount": "Create an account",
-    "signInToExisting": "Sign in to existing account",
-    "forgotPassword": "Forgot password?",
-    "invalidCredentials": "Invalid email or password. Please try again.",
-    "accountCreated": "Account created successfully!",
-    "signedOut": "You have been signed out."
-  },
-  "email": {
-    "magicLink": {
-      "subject": "Sign in to iVibeFinance",
-      "title": "Sign in",
-      "body": "Use the button below to sign in. This link will expire soon.",
-      "button": "Sign in to iVibeFinance",
-      "fallback": "If the button doesn't work, copy and paste this link into your browser:",
-      "footer": "If you didn't request this email, you can safely ignore it."
-    },
-    "footer": {
-      "followTitle": "Follow us for updates, tutorials, and community highlights:",
-      "updatesLine": "To help make your experience the best it can be, we’ll send occasional product updates. If you no longer want to receive updates, feel free to {unsubscribe} at any time.",
-      "unsubscribe": "unsubscribe"
-    }
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "welcome": "Welcome back",
-    "overview": "Overview",
-    "activity": "Activity",
-    "team": "Team",
-    "general": "General",
-    "security": "Security",
-    "billing": "Billing",
-    "noActivity": "No activity yet"
-  },
-  "admin": {
-    "title": "Admin Dashboard",
-    "users": "Users",
-    "teams": "Teams",
-    "subscriptions": "Subscriptions",
-    "analytics": "Analytics",
-    "activityLogs": "Activity Logs",
-    "systemSettings": "System Settings",
-    "totalUsers": "Total Users",
-    "totalTeams": "Total Teams",
-    "activeSubscriptions": "Active Subscriptions",
-    "recentActivity": "Recent Activity",
-    "userManagement": "User Management",
-    "roleManagement": "Role Management",
-    "superAdmin": "Super Admin",
-    "adminRole": "Admin",
-    "memberRole": "Member"
-  },
-  "team": {
-    "title": "Team",
-    "members": "Members",
-    "inviteMember": "Invite Member",
-    "removeMember": "Remove Member",
-    "owner": "Owner",
-    "member": "Member",
-    "pending": "Pending",
-    "invitationSent": "Invitation sent successfully",
-    "memberRemoved": "Member removed successfully"
-  },
-  "settings": {
-    "title": "Settings",
-    "profile": "Profile",
-    "account": "Account",
-    "notifications": "Notifications",
-    "updateProfile": "Update Profile",
-    "changePassword": "Change Password",
-    "deleteAccount": "Delete Account",
-    "currentPassword": "Current Password",
-    "newPassword": "New Password",
-    "confirmPassword": "Confirm Password",
-    "passwordUpdated": "Password updated successfully",
-    "profileUpdated": "Profile updated successfully"
-  },
-  "errors": {
-    "generic": "Something went wrong. Please try again.",
-    "notFound": "Page not found",
-    "unauthorized": "You are not authorized to access this page",
-    "serverError": "Server error. Please try again later."
-  }
 }
