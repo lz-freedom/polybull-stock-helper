@@ -29,7 +29,7 @@ export default async function UsersPage({ params }: UsersPageProps) {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">{t('users')}</h1>
+                <h1 className="text-2xl font-bold text-muted-foreground">{t('users')}</h1>
                 <Badge variant="secondary" className="text-sm">
                     {allUsers.length} users
                 </Badge>
@@ -62,7 +62,7 @@ export default async function UsersPage({ params }: UsersPageProps) {
                                         : user.email[0].toUpperCase();
 
                                     return (
-                                        <tr key={user.id} className="border-b hover:bg-gray-50">
+                                        <tr key={user.id} className="border-b hover:bg-muted">
                                             <td className="py-3 px-4">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8">
@@ -72,7 +72,7 @@ export default async function UsersPage({ params }: UsersPageProps) {
                                                     <span className="font-medium">{user.name || 'No name'}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 px-4 text-gray-600">{user.email}</td>
+                                            <td className="py-3 px-4 text-muted-foreground">{user.email}</td>
                                             <td className="py-3 px-4">
                                                 <Badge
                                                     variant={
@@ -86,11 +86,11 @@ export default async function UsersPage({ params }: UsersPageProps) {
                                                     {getRoleDisplayName(user.role, locale)}
                                                 </Badge>
                                             </td>
-                                            <td className="py-3 px-4 text-gray-500 text-sm">
+                                            <td className="py-3 px-4 text-muted-foreground text-sm">
                                                 {new Date(user.createdAt).toLocaleDateString()}
                                             </td>
                                             <td className="py-3 px-4">
-                                                <button className="text-orange-600 hover:text-orange-800 text-sm">
+                                                <button className="text-warning hover:text-warning text-sm">
                                                     Edit
                                                 </button>
                                             </td>
@@ -101,7 +101,7 @@ export default async function UsersPage({ params }: UsersPageProps) {
                         </table>
 
                         {allUsers.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-muted-foreground">
                                 No users found
                             </div>
                         )}

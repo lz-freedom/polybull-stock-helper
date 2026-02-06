@@ -26,7 +26,7 @@ export default async function SubscriptionsPage({ params }: SubscriptionsPagePro
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">{t('subscriptions')}</h1>
+            <h1 className="text-2xl font-bold text-muted-foreground">{t('subscriptions')}</h1>
 
             <Card>
                 <CardHeader>
@@ -45,7 +45,7 @@ export default async function SubscriptionsPage({ params }: SubscriptionsPagePro
                             </thead>
                             <tbody>
                                 {subscriptions.map((sub) => (
-                                    <tr key={sub.id} className="border-b hover:bg-gray-50">
+                                    <tr key={sub.id} className="border-b hover:bg-muted">
                                         <td className="py-3 px-4 font-medium">{sub.name}</td>
                                         <td className="py-3 px-4">
                                             <Badge variant="outline">{sub.planName || 'Unknown'}</Badge>
@@ -63,7 +63,7 @@ export default async function SubscriptionsPage({ params }: SubscriptionsPagePro
                                                 {sub.subscriptionStatus}
                                             </Badge>
                                         </td>
-                                        <td className="py-3 px-4 text-sm text-gray-500 font-mono">
+                                        <td className="py-3 px-4 text-sm text-muted-foreground font-mono">
                                             {sub.stripeCustomerId?.slice(0, 20)}...
                                         </td>
                                     </tr>
@@ -72,7 +72,7 @@ export default async function SubscriptionsPage({ params }: SubscriptionsPagePro
                         </table>
 
                         {subscriptions.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-muted-foreground">
                                 No active subscriptions
                             </div>
                         )}

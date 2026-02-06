@@ -113,6 +113,15 @@ pnpm db:seed          # 填充测试数据
 pnpm db:studio        # 打开 Drizzle Studio
 ```
 
+## 🎨 UI 变量化约束
+
+- 主题变量统一定义在 `src/app/globals.css`，业务组件不允许直接写颜色值。
+- 组件只能使用语义 token 类，例如：
+  - `bg-background` `bg-card` `text-foreground` `text-muted-foreground` `border-border`
+  - `text-success` `text-warning` `text-info` `text-destructive`
+- 本地执行 `pnpm lint` 会同时检查代码规范和设计令牌规范。
+- 详细规范见：`docs/ui-tokens.md`
+
 ## 📄 License
 
 MIT

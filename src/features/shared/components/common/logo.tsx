@@ -19,7 +19,7 @@ export function Logo({ showText = true, size = 'md', variant = 'auto', className
 
     // Use semantic color that adapts to theme
     const textColor = variant === 'dark'
-        ? 'text-white'
+        ? 'text-primary-foreground'
         : variant === 'light'
             ? 'text-foreground'
             : 'text-foreground';
@@ -35,9 +35,9 @@ export function Logo({ showText = true, size = 'md', variant = 'auto', className
             />
             {showText && (
                 <span className={`font-bold ${text}`}>
-                    <span className="bg-gradient-to-r from-violet-500 to-pink-500 bg-clip-text text-transparent">i</span>
+                    <span className="bg-gradient-to-r from-info to-primary bg-clip-text text-transparent">i</span>
                     <span className={textColor}>Vibe</span>
-                    <span className="bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent">Finance</span>
+                    <span className="bg-gradient-to-r from-primary to-warning bg-clip-text text-transparent">Finance</span>
                 </span>
             )}
         </div>

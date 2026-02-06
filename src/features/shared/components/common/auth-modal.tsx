@@ -110,14 +110,14 @@ export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
                     {/* Overlay Text - iVibeFinance Branding */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10 text-center">
                         <div className="space-y-4 max-w-[80%]">
-                            <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
+                            <h2 className="text-3xl font-bold tracking-tight text-primary-foreground mb-2">
                                 iVibeFinance
                             </h2>
-                            <div className="w-12 h-1 bg-[#BE185D] mx-auto rounded-full" />
-                            <p className="text-lg text-white/90 font-medium leading-relaxed">
+                            <div className="w-12 h-1 bg-primary mx-auto rounded-full" />
+                            <p className="text-lg text-primary-foreground/90 font-medium leading-relaxed">
                                 Smart Stock Analysis
                             </p>
-                            <p className="text-sm text-white/60 leading-relaxed">
+                            <p className="text-sm text-primary-foreground/60 leading-relaxed">
                                 AI-driven insights to empower your investment journey.
                             </p>
                         </div>
@@ -152,7 +152,7 @@ export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
                             <button
                                 onClick={handleSubmitEmail}
                                 disabled={!email || isLoading}
-                                className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1 whitespace-nowrap outline-none transition-all duration-300 ease-in-out h-[46px] px-6 py-3 text-sm font-medium leading-[22px] w-full rounded-md disabled:pointer-events-none disabled:opacity-50 bg-[#EC4899] hover:bg-[#BE185D] text-white shadow-sm"
+                                className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1 whitespace-nowrap outline-none transition-all duration-300 ease-in-out h-[46px] px-6 py-3 text-sm font-medium leading-[22px] w-full rounded-md disabled:pointer-events-none disabled:opacity-50 bg-primary hover:bg-primary text-primary-foreground shadow-sm"
                             >
                                 {isLoading ? <Loader2 className="animate-spin size-4" /> : t('continue')}
                             </button>
@@ -188,15 +188,15 @@ export function AuthModal({ isOpen, onClose, locale }: AuthModalProps) {
                             {/* Terms */}
                             <div className="text-muted-foreground text-center text-[10px] mt-2 leading-tight">
                                 {t('agreeText')}{' '}
-                                <Link href="/privacy" className="text-[#BE185D] hover:underline hover:text-[#9D174D]">{t('privacyPolicy')}</Link>
+                                <Link href="/privacy" className="text-primary hover:underline hover:text-primary">{t('privacyPolicy')}</Link>
                                 {' '}&{' '}
-                                <Link href="/terms" className="text-[#BE185D] hover:underline hover:text-[#9D174D]">{t('termsOfService')}</Link>
+                                <Link href="/terms" className="text-primary hover:underline hover:text-primary">{t('termsOfService')}</Link>
                             </div>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-6 items-center justify-center py-4">
-                            <div className="h-14 w-14 bg-[#BE185D]/10 rounded-full flex items-center justify-center">
-                                <CheckCircle className="h-7 w-7 text-[#BE185D]" />
+                            <div className="h-14 w-14 bg-accent rounded-full flex items-center justify-center">
+                                <CheckCircle className="h-7 w-7 text-primary" />
                             </div>
                             <div className="text-center space-y-2">
                                 <h2 className="text-xl font-semibold text-foreground">Check your inbox</h2>

@@ -191,7 +191,7 @@ export function EmbeddedQAChat({
                 setMessages(prev => prev.map(msg =>
                     msg.id === aiMsgId
                         ? { ...msg, content: aiContent }
-                        : msg
+                        : msg,
                 ));
             }
 
@@ -199,7 +199,7 @@ export function EmbeddedQAChat({
             setMessages(prev => prev.map(msg =>
                 msg.id === aiMsgId
                     ? { ...msg, isStreaming: false }
-                    : msg
+                    : msg,
             ));
 
         } catch (err) {
@@ -227,7 +227,7 @@ export function EmbeddedQAChat({
         return (
             <div className={cn(
                 'fixed bottom-4 right-4 z-50',
-                className
+                className,
             )}>
                 {/* 展开状态: 聊天面板 */}
                 {isExpanded ? (
@@ -275,7 +275,7 @@ export function EmbeddedQAChat({
                                     key={msg.id}
                                     className={cn(
                                         'flex gap-2',
-                                        msg.role === 'user' ? 'justify-end' : 'justify-start'
+                                        msg.role === 'user' ? 'justify-end' : 'justify-start',
                                     )}
                                 >
                                     {/* 头像 */}
@@ -292,7 +292,7 @@ export function EmbeddedQAChat({
                                             ? 'bg-primary text-primary-foreground'
                                             : msg.error
                                                 ? 'bg-destructive/10 text-destructive'
-                                                : 'bg-muted text-foreground'
+                                                : 'bg-muted text-foreground',
                                     )}>
                                         <p className="whitespace-pre-wrap break-words">
                                             {msg.content}
@@ -362,7 +362,7 @@ export function EmbeddedQAChat({
         <div className={cn(
             'border-l bg-background flex flex-col h-full',
             isExpanded ? 'w-80' : 'w-12',
-            className
+            className,
         )}>
             {/* 折叠按钮 */}
             <button
@@ -407,7 +407,7 @@ export function EmbeddedQAChat({
                                         ? 'bg-primary/10 text-right'
                                         : msg.error
                                             ? 'bg-destructive/10'
-                                            : 'bg-muted'
+                                            : 'bg-muted',
                                 )}
                             >
                                 {msg.content}

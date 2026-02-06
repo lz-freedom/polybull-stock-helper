@@ -44,7 +44,7 @@ export default function AuthCallbackPage() {
 
                 {isSuccess && (
                     <>
-                        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                        <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
                         <p className="text-foreground font-medium">Sign in successful!</p>
                         <p className="text-muted-foreground text-sm mt-2">This window will close automatically.</p>
                     </>
@@ -52,7 +52,7 @@ export default function AuthCallbackPage() {
 
                 {isError && (
                     <>
-                        <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                        <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
                         <p className="text-foreground font-medium">Sign in failed</p>
                         <p className="text-muted-foreground text-sm mt-2">This window will close automatically.</p>
                     </>

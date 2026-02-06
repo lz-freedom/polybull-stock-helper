@@ -45,7 +45,7 @@ export default async function TeamsPage({ params }: TeamsPageProps) {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">{t('teams')}</h1>
+                <h1 className="text-2xl font-bold text-muted-foreground">{t('teams')}</h1>
                 <Badge variant="secondary" className="text-sm">
                     {allTeams.length} teams
                 </Badge>
@@ -69,7 +69,7 @@ export default async function TeamsPage({ params }: TeamsPageProps) {
                             </thead>
                             <tbody>
                                 {allTeams.map((team) => (
-                                    <tr key={team.id} className="border-b hover:bg-gray-50">
+                                    <tr key={team.id} className="border-b hover:bg-muted">
                                         <td className="py-3 px-4 font-medium">{team.name}</td>
                                         <td className="py-3 px-4">
                                             {memberCountMap.get(team.id) || 0} members
@@ -90,7 +90,7 @@ export default async function TeamsPage({ params }: TeamsPageProps) {
                                                 {team.subscriptionStatus || 'No subscription'}
                                             </Badge>
                                         </td>
-                                        <td className="py-3 px-4 text-gray-500 text-sm">
+                                        <td className="py-3 px-4 text-muted-foreground text-sm">
                                             {new Date(team.createdAt).toLocaleDateString()}
                                         </td>
                                     </tr>
@@ -99,7 +99,7 @@ export default async function TeamsPage({ params }: TeamsPageProps) {
                         </table>
 
                         {allTeams.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-muted-foreground">
                                 No teams found
                             </div>
                         )}

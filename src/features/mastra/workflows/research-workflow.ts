@@ -492,6 +492,16 @@ export const researchWorkflow = createWorkflow({
                     const branchId = `${task.role}:${task.taskId}`;
                     const startedAt = Date.now();
 
+                    await emit(
+                        requestContext,
+                        createEvent('round', {
+                            round: i + 1,
+                            totalRounds: tasks.length,
+                            speaker: task.role,
+                            agenda: task.question,
+                        }),
+                    );
+
                     // 发送思考事件：开始研究当前任务
                     await emit(
                         requestContext,
@@ -547,6 +557,13 @@ export const researchWorkflow = createWorkflow({
                                     evidence: finding.evidence,
                                     limitations: finding.limitations,
                                 },
+                            }),
+                        );
+                        await emit(
+                            requestContext,
+                            createEvent('step-summary', {
+                                stepId: String(step.id),
+                                summary: finding.summary,
                             }),
                         );
                         await emit(
@@ -689,8 +706,8 @@ export const researchWorkflow = createWorkflow({
                         agentRunId: init.runDbId,
                         reportType: 'research',
                         title: report.title,
-                        summary: report.executiveSummary,
-                        content: report.conclusion,
+                        summary: report.summary,
+                        content: report.summary,
                         structuredData: report as unknown as Record<string, unknown>,
                         sources: {
                             snapshot: state.snapshotDbId,
@@ -701,20 +718,31 @@ export const researchWorkflow = createWorkflow({
                     })
                     .returning();
 
-                await db.insert(reportSections).values(
-                    report.sections.map((section, index) => ({
-                        reportId: createdReport.id,
-                        sectionName: `section_${index + 1}`,
-                        sectionOrder: index + 1,
-                        title: section.heading,
-                        content: section.content,
-                        structuredData: {
-                            evidence: section.evidence,
-                        } as unknown as Record<string, unknown>,
-                    })),
-                );
+                const moduleEntries = Object.entries(report.modules ?? {});
+                if (moduleEntries.length > 0) {
+                    await db.insert(reportSections).values(
+                        moduleEntries.map(([key, section], index) => ({
+                            reportId: createdReport.id,
+                            sectionName: key,
+                            sectionOrder: index + 1,
+                            title: section.title ?? key,
+                            content: section.content ?? '',
+                            structuredData: section as unknown as Record<string, unknown>,
+                        })),
+                    );
+                }
 
                 await updateAgentRunStatus({ runDbId: init.runDbId, status: AGENT_RUN_STATUS.COMPLETED, output: report });
+
+                await emit(
+                    requestContext,
+                    createEvent('report', {
+                        reportId: createdReport.id,
+                        reportType: 'research',
+                        report,
+                        runId: init.runDbId,
+                    }),
+                );
 
                 await emit(
                     requestContext,
@@ -728,7 +756,7 @@ export const researchWorkflow = createWorkflow({
                                 name: stockInfo.name ?? null,
                             },
                             title: report.title,
-                            executiveSummary: report.executiveSummary,
+                            summary: report.summary,
                         },
                     }),
                 );

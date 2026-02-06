@@ -2,12 +2,13 @@ import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } 
 import { handleChatStream, type ChatStreamHandlerParams } from '@mastra/ai-sdk';
 import { RequestContext } from '@mastra/core/request-context';
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 
 import { extractStockInfoFromText } from '@/features/agents/actions/extract';
 import {
     CHAT_MODES,
     DEFAULT_CHAT_MODE,
+    FOLLOW_UP_ALLOWED_MODES,
     type ChatMode,
 } from '@/features/agents/lib/chat-contract';
 import {
@@ -20,6 +21,7 @@ import {
     updateSessionTitle,
 } from '@/features/agents/lib/graphs/qa';
 import { mastra } from '@/features/mastra';
+import { TOOL_MODEL_ID } from '@/features/mastra/providers/openrouter';
 import { createEvent, type WorkflowEvent } from '@/features/mastra/events/types';
 import { WORKFLOW_EVENT_EMITTER_KEY } from '@/features/mastra/workflows/context';
 import {
@@ -31,8 +33,10 @@ import { db } from '@/lib/db/drizzle';
 import {
     agentRunSteps,
     agentRuns,
+    agentRunEvents,
     chatMessages,
     chatSessions,
+    reports,
     usageCounters,
     AGENT_RUN_STATUS,
     AGENT_STEP_STATUS,
@@ -44,6 +48,18 @@ type MinimalToolCallMetadata = {
     toolCallId: string;
     toolName: string;
     status: 'called' | 'completed' | 'error';
+    input?: unknown;
+    output?: unknown;
+    errorText?: string;
+    providerExecuted?: boolean;
+};
+
+type UnifiedChatOptions = {
+    stockSymbol?: string;
+    exchangeAcronym?: string;
+    forceRefresh?: boolean;
+    query?: string;
+    fromReport?: boolean;
 };
 
 type MastraChatParams = ChatStreamHandlerParams<UIMessage> & {
@@ -53,6 +69,7 @@ type MastraChatParams = ChatStreamHandlerParams<UIMessage> & {
     stockSymbol?: string;
     exchangeAcronym?: string;
     forceRefresh?: boolean;
+    options?: UnifiedChatOptions;
 };
 
 type ToolInputStreamState = {
@@ -111,8 +128,8 @@ function normalizeToolInputStream(
                     typeof chunk.inputTextDelta === 'string'
                         ? chunk.inputTextDelta
                         : typeof chunk.delta === 'string'
-                          ? chunk.delta
-                          : '';
+                            ? chunk.delta
+                            : '';
                 if (!delta) return;
                 const current = toolInputState.get(toolCallId) ?? {
                     argsText: '',
@@ -180,6 +197,94 @@ function truncate(text: string, maxLength: number): string {
     return `${text.slice(0, maxLength)}...`;
 }
 
+function buildStepSummary(text: string, maxLength = 200): string {
+    const cleaned = text.replace(/\s+/g, ' ').trim();
+    if (!cleaned) return '';
+    return cleaned.length > maxLength ? `${cleaned.slice(0, maxLength)}...` : cleaned;
+}
+
+function removeToolCallBlocks(text: string): string {
+    if (!text) return text;
+    return text.replace(/\[TOOL_CALL\][\s\S]*?\[\/TOOL_CALL\]/g, '');
+}
+
+function createToolCallSanitizer() {
+    const TOOL_CALL_START = '[TOOL_CALL]';
+    const TOOL_CALL_END = '[/TOOL_CALL]';
+    const TAIL_LENGTH = 20;
+    let buffer = '';
+
+    const update = (delta: string) => {
+        buffer += delta;
+        const cleaned = removeToolCallBlocks(buffer);
+
+        const lastStart = cleaned.lastIndexOf(TOOL_CALL_START);
+        const lastEnd = cleaned.lastIndexOf(TOOL_CALL_END);
+        if (lastStart !== -1 && lastStart > lastEnd) {
+            const emit = cleaned.slice(0, lastStart);
+            buffer = cleaned.slice(lastStart);
+            return emit;
+        }
+
+        if (cleaned.length > TAIL_LENGTH) {
+            const emit = cleaned.slice(0, cleaned.length - TAIL_LENGTH);
+            buffer = cleaned.slice(cleaned.length - TAIL_LENGTH);
+            return emit;
+        }
+
+        buffer = cleaned;
+        return '';
+    };
+
+    const flush = () => {
+        let cleaned = removeToolCallBlocks(buffer);
+        const lastStart = cleaned.lastIndexOf(TOOL_CALL_START);
+        if (lastStart !== -1) {
+            cleaned = cleaned.slice(0, lastStart);
+        }
+        buffer = '';
+        return cleaned;
+    };
+
+    return { update, flush };
+}
+
+function normalizeChatOptions(params: MastraChatParams): UnifiedChatOptions {
+    const options = params.options ?? {};
+    return {
+        stockSymbol: params.stockSymbol ?? options.stockSymbol,
+        exchangeAcronym: params.exchangeAcronym ?? options.exchangeAcronym,
+        forceRefresh:
+            typeof params.forceRefresh === 'boolean'
+                ? params.forceRefresh
+                : options.forceRefresh,
+        query: options.query,
+        fromReport: options.fromReport,
+    };
+}
+
+function buildStoredParts(parts: Array<Record<string, unknown>>) {
+    return JSON.stringify({ parts });
+}
+
+function stableStringify(value: unknown): string {
+    if (value === null || typeof value !== 'object') {
+        return JSON.stringify(value);
+    }
+
+    if (Array.isArray(value)) {
+        return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+    }
+
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+        a.localeCompare(b),
+    );
+    const body = entries
+        .map(([key, val]) => `${JSON.stringify(key)}:${stableStringify(val)}`)
+        .join(',');
+    return `{${body}}`;
+}
+
 function getMessageText(message: unknown): string {
     if (!message || typeof message !== 'object') return '';
 
@@ -220,17 +325,17 @@ type AgentChatMessage = {
 };
 
 function sanitizeMessagesForModel(messages: UIMessage[]): AgentChatMessage[] {
-    return messages
-        .map((message) => {
-            const text = getMessageText(message);
-            if (!text.trim()) return null;
-            return {
-                id: message.id,
-                role: message.role,
-                content: text,
-            } satisfies AgentChatMessage;
-        })
-        .filter((message): message is AgentChatMessage => Boolean(message));
+    const sanitized: AgentChatMessage[] = [];
+    messages.forEach((message) => {
+        const text = getMessageText(message);
+        if (!text.trim()) return;
+        sanitized.push({
+            id: message.id,
+            role: message.role,
+            content: text,
+        });
+    });
+    return sanitized;
 }
 
 const GREETING_PATTERN = /^(hi|hello|hey|yo|你好|您好|哈喽|嗨|早上好|下午好|晚上好|在吗|在嘛|hey there)[!！。]?$/i;
@@ -243,6 +348,10 @@ function isGreeting(text: string): boolean {
 
 function shouldEnableInstantTools(text: string): boolean {
     return INSTANT_TOOL_TRIGGER.test(text);
+}
+
+function shouldEnableRigorousTools(text: string): boolean {
+    return INSTANT_TOOL_TRIGGER.test(text) || /最新|当前|实时|今天|近期|财报|数据|指标|估值|市盈率|市值|PE|EPS/i.test(text);
 }
 
 function resolveChatMode(raw: unknown): ChatMode {
@@ -269,6 +378,14 @@ function resolveModeSystemContext(mode: ChatMode): string | null {
         ].join(' ');
     }
     return null;
+}
+
+function resolveAgentId(mode: ChatMode): 'instantAgent' | 'rigorousAgent' {
+    return mode === CHAT_MODES.RIGOROUS ? 'rigorousAgent' : 'instantAgent';
+}
+
+function resolveLiteAgentId(mode: ChatMode): 'instantLiteAgent' | 'rigorousLiteAgent' {
+    return mode === CHAT_MODES.RIGOROUS ? 'rigorousLiteAgent' : 'instantLiteAgent';
 }
 
 async function resolveStockContext(sessionId: string, content: string) {
@@ -329,16 +446,18 @@ function resolveModeLimit(mode: ChatMode): number {
         mode === CHAT_MODES.INSTANT
             ? 'CHAT_QUOTA_INSTANT'
             : mode === CHAT_MODES.RIGOROUS
-              ? 'CHAT_QUOTA_RIGOROUS'
-              : mode === CHAT_MODES.CONSENSUS
-                ? 'CHAT_QUOTA_CONSENSUS'
-                : 'CHAT_QUOTA_RESEARCH';
+                ? 'CHAT_QUOTA_RIGOROUS'
+                : mode === CHAT_MODES.CONSENSUS
+                    ? 'CHAT_QUOTA_CONSENSUS'
+                    : 'CHAT_QUOTA_RESEARCH';
 
     const raw = process.env[envKey];
     const parsed = raw ? Number.parseInt(raw, 10) : NaN;
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
     return DEFAULT_MODE_LIMITS[mode];
 }
+
+const ENABLE_MASTRA_MEMORY = process.env.MASTRA_MEMORY_ENABLED === 'true';
 
 function getUsagePeriodKey(date = new Date()): string {
     return date.toISOString().slice(0, 10);
@@ -588,6 +707,8 @@ export async function POST(request: NextRequest) {
             const params = body as MastraChatParams;
             const sessionId = params.session_id ?? params.sessionId;
             const chatId = params.id;
+            const options = normalizeChatOptions(params);
+            const fromReport = Boolean(options.fromReport);
 
             if (!Array.isArray(params.messages) || params.messages.length === 0) {
                 return NextResponse.json(
@@ -598,11 +719,11 @@ export async function POST(request: NextRequest) {
 
             const [existingSession] = sessionId
                 ? await db
-                      .select()
-                      .from(chatSessions)
-                      .where(eq(chatSessions.id, sessionId))
+                    .select()
+                    .from(chatSessions)
+                    .where(eq(chatSessions.id, sessionId))
                 : chatId
-                  ? await db
+                    ? await db
                         .select()
                         .from(chatSessions)
                         .where(
@@ -613,7 +734,7 @@ export async function POST(request: NextRequest) {
                                     : isNull(chatSessions.userId),
                             ),
                         )
-                  : [];
+                    : [];
 
             const session =
                 existingSession ??
@@ -623,12 +744,15 @@ export async function POST(request: NextRequest) {
                         .values({
                             ...(sessionId ? { id: sessionId } : {}),
                             userId: user?.id,
-                            stock_symbol: params.stockSymbol ?? null,
-                            exchange_acronym: params.exchangeAcronym ?? null,
+                            stock_symbol: options.stockSymbol ?? null,
+                            exchange_acronym: options.exchangeAcronym ?? null,
                             title: `Chat ${new Date().toLocaleDateString()}`,
                             metadata: {
                                 source: 'agents',
-                                agentId: 'qaAgent',
+                                agentId:
+                                    mode === CHAT_MODES.INSTANT || mode === CHAT_MODES.RIGOROUS
+                                        ? resolveAgentId(mode)
+                                        : `${mode}Workflow`,
                                 mode,
                                 ...(chatId ? { mastraChatId: chatId } : {}),
                             },
@@ -664,12 +788,26 @@ export async function POST(request: NextRequest) {
 
                 const stockContext = await resolveStockContext(session.id, content);
                 const modeContext = resolveModeSystemContext(mode);
+                const enableTools =
+                    mode === CHAT_MODES.INSTANT
+                        ? shouldEnableInstantTools(content)
+                        : mode === CHAT_MODES.RIGOROUS
+                            ? shouldEnableRigorousTools(content)
+                            : false;
                 const instantToolChoice =
-                    mode === CHAT_MODES.INSTANT && !shouldEnableInstantTools(content)
-                        ? 'none'
-                        : undefined;
+                    mode === CHAT_MODES.INSTANT && !enableTools ? 'none' : undefined;
+
+                if (fromReport && !FOLLOW_UP_ALLOWED_MODES.includes(mode)) {
+                    return NextResponse.json(
+                        { error: 'Follow-up is only allowed in instant/rigorous mode' },
+                        { status: 400 },
+                    );
+                }
+
                 const reportContext =
-                    typeof body?.reportContext === 'string' && body.reportContext.trim().length > 0
+                    fromReport &&
+                    typeof body?.reportContext === 'string' &&
+                    body.reportContext.trim().length > 0
                         ? body.reportContext.trim()
                         : undefined;
                 const quota = await checkUsageQuota({ userId: user?.id, mode });
@@ -690,22 +828,22 @@ export async function POST(request: NextRequest) {
 
                 const [alreadyPersisted] = lastUserMessageId
                     ? await db
-                          .select({ id: chatMessages.id })
-                          .from(chatMessages)
-                          .where(
-                              and(
-                                  eq(chatMessages.sessionId, session.id),
-                                  sql`${chatMessages.metadata} ->> 'clientMessageId' = ${lastUserMessageId}`,
-                              ),
-                          )
-                          .limit(1)
+                        .select({ id: chatMessages.id })
+                        .from(chatMessages)
+                        .where(
+                            and(
+                                eq(chatMessages.sessionId, session.id),
+                                sql`${chatMessages.metadata} ->> 'clientMessageId' = ${lastUserMessageId}`,
+                            ),
+                        )
+                        .limit(1)
                     : [];
 
                 if (!alreadyPersisted) {
                     await db.insert(chatMessages).values({
                         sessionId: session.id,
                         role: 'user',
-                        content,
+                        content: buildStoredParts([{ type: 'text', text: content }]),
                         metadata: {
                             source: 'agents',
                             mode,
@@ -717,18 +855,18 @@ export async function POST(request: NextRequest) {
 
                 const quotaSnapshot = quota.shouldTrack
                     ? {
-                          userId: user?.id ?? null,
-                          mode,
-                          periodKey: quota.periodKey!,
-                          limit: quota.limit!,
-                          sessionId: session.id,
-                      }
+                        userId: user?.id ?? null,
+                        mode,
+                        periodKey: quota.periodKey!,
+                        limit: quota.limit!,
+                        sessionId: session.id,
+                    }
                     : null;
 
                 if (mode === CHAT_MODES.CONSENSUS) {
-                    const resolvedStockSymbol = stockContext.stockSymbol ?? params.stockSymbol;
+                    const resolvedStockSymbol = stockContext.stockSymbol ?? options.stockSymbol;
                     const resolvedExchangeAcronym =
-                        stockContext.exchangeAcronym ?? params.exchangeAcronym;
+                        stockContext.exchangeAcronym ?? options.exchangeAcronym;
 
                     if (!resolvedStockSymbol || !resolvedExchangeAcronym) {
                         return NextResponse.json(
@@ -740,7 +878,7 @@ export async function POST(request: NextRequest) {
                         );
                     }
 
-                    if (!stockContext.stockSymbol && params.stockSymbol) {
+                    if (!stockContext.stockSymbol && options.stockSymbol) {
                         await updateSessionStock(
                             session.id,
                             resolvedStockSymbol,
@@ -753,11 +891,11 @@ export async function POST(request: NextRequest) {
                         stockSymbol: resolvedStockSymbol,
                         exchangeAcronym: resolvedExchangeAcronym,
                         forceRefresh:
-                            typeof params.forceRefresh === 'boolean'
-                                ? params.forceRefresh
+                            typeof options.forceRefresh === 'boolean'
+                                ? options.forceRefresh
                                 : undefined,
                         sessionId: session.id,
-                        query: content,
+                        query: options.query ?? content,
                     });
 
                     if (quotaSnapshot) {
@@ -789,12 +927,16 @@ export async function POST(request: NextRequest) {
                     let assistantText = '';
                     let finalStatus: 'finished' | 'failed' = 'finished';
                     let errorText: string | undefined;
+                    const storedParts: Array<Record<string, unknown>> = [];
 
                     const finalize = async () => {
+                        if (assistantText.trim()) {
+                            storedParts.unshift({ type: 'text', text: assistantText });
+                        }
                         await db
                             .update(chatMessages)
                             .set({
-                                content: assistantText,
+                                content: buildStoredParts(storedParts),
                                 metadata: {
                                     source: 'agents',
                                     mode,
@@ -824,6 +966,11 @@ export async function POST(request: NextRequest) {
                                 try {
                                     writer.write({
                                         type: `data-${event.type}`,
+                                        data: event,
+                                    });
+                                    storedParts.push({
+                                        type: 'data',
+                                        name: event.type,
                                         data: event,
                                     });
 
@@ -879,24 +1026,54 @@ export async function POST(request: NextRequest) {
                                     inputData,
                                     requestContext,
                                 });
+                                const workflowOutput =
+                                    (result &&
+                                        typeof result === 'object' &&
+                                        'result' in result
+                                        ? (result as { result?: { report?: any; reportDbId?: number } }).result
+                                        : result) as { report?: any; reportDbId?: number } | undefined;
 
-                                if (result?.report) {
+                                if (workflowOutput?.report) {
                                     assistantText =
-                                        result.report.overallSummary ??
-                                        result.report.title ??
+                                        workflowOutput.report.overallSummary ??
+                                        workflowOutput.report.title ??
                                         assistantText;
 
                                     try {
+                                        const reportPayload = {
+                                            runId: run.id,
+                                            reportId: workflowOutput.reportDbId,
+                                            reportType: 'consensus',
+                                            report: workflowOutput.report,
+                                            timestamp: Date.now(),
+                                        };
                                         writer.write({
                                             type: 'data-report',
-                                            data: {
-                                                runId: run.id,
-                                                reportId: result.reportDbId,
-                                                reportType: 'consensus',
-                                                report: result.report,
-                                                timestamp: Date.now(),
-                                            },
+                                            data: reportPayload,
                                         });
+                                        storedParts.push({
+                                            type: 'data',
+                                            name: 'report',
+                                            data: reportPayload,
+                                        });
+
+                                        const summaryText = buildStepSummary(assistantText);
+                                        if (summaryText) {
+                                            const stepSummaryPayload = {
+                                                stepId: 'consensus.summary',
+                                                summary: summaryText,
+                                                timestamp: Date.now(),
+                                            };
+                                            writer.write({
+                                                type: 'data-step-summary',
+                                                data: stepSummaryPayload,
+                                            });
+                                            storedParts.push({
+                                                type: 'data',
+                                                name: 'step-summary',
+                                                data: stepSummaryPayload,
+                                            });
+                                        }
                                     } catch (err) {
                                         console.warn(
                                             'Failed to write report to stream:',
@@ -952,9 +1129,9 @@ export async function POST(request: NextRequest) {
                 }
 
                 if (mode === CHAT_MODES.RESEARCH) {
-                    const resolvedStockSymbol = stockContext.stockSymbol ?? params.stockSymbol;
+                    const resolvedStockSymbol = stockContext.stockSymbol ?? options.stockSymbol;
                     const resolvedExchangeAcronym =
-                        stockContext.exchangeAcronym ?? params.exchangeAcronym;
+                        stockContext.exchangeAcronym ?? options.exchangeAcronym;
 
                     if (!resolvedStockSymbol || !resolvedExchangeAcronym) {
                         return NextResponse.json(
@@ -966,7 +1143,7 @@ export async function POST(request: NextRequest) {
                         );
                     }
 
-                    if (!stockContext.stockSymbol && params.stockSymbol) {
+                    if (!stockContext.stockSymbol && options.stockSymbol) {
                         await updateSessionStock(
                             session.id,
                             resolvedStockSymbol,
@@ -978,10 +1155,10 @@ export async function POST(request: NextRequest) {
                         userId: user?.id ?? null,
                         stockSymbol: resolvedStockSymbol,
                         exchangeAcronym: resolvedExchangeAcronym,
-                        query: content,
+                        query: options.query ?? content,
                         forceRefresh:
-                            typeof params.forceRefresh === 'boolean'
-                                ? params.forceRefresh
+                            typeof options.forceRefresh === 'boolean'
+                                ? options.forceRefresh
                                 : undefined,
                         sessionId: session.id,
                     });
@@ -1015,12 +1192,16 @@ export async function POST(request: NextRequest) {
                     let assistantText = '';
                     let finalStatus: 'finished' | 'failed' = 'finished';
                     let errorText: string | undefined;
+                    const storedParts: Array<Record<string, unknown>> = [];
 
                     const finalize = async () => {
+                        if (assistantText.trim()) {
+                            storedParts.unshift({ type: 'text', text: assistantText });
+                        }
                         await db
                             .update(chatMessages)
                             .set({
-                                content: assistantText,
+                                content: buildStoredParts(storedParts),
                                 metadata: {
                                     source: 'agents',
                                     mode,
@@ -1049,6 +1230,11 @@ export async function POST(request: NextRequest) {
                                 try {
                                     writer.write({
                                         type: `data-${event.type}`,
+                                        data: event,
+                                    });
+                                    storedParts.push({
+                                        type: 'data',
+                                        name: event.type,
                                         data: event,
                                     });
                                 } catch (err) {
@@ -1085,23 +1271,35 @@ export async function POST(request: NextRequest) {
                                     inputData,
                                     requestContext,
                                 });
+                                const workflowOutput =
+                                    (result &&
+                                        typeof result === 'object' &&
+                                        'result' in result
+                                        ? (result as { result?: { report?: any; reportDbId?: number } }).result
+                                        : result) as { report?: any; reportDbId?: number } | undefined;
 
-                                if (result?.report) {
+                                if (workflowOutput?.report) {
                                     assistantText =
-                                        result.report.executiveSummary ??
-                                        result.report.title ??
+                                        workflowOutput.report.summary ??
+                                        workflowOutput.report.title ??
                                         assistantText;
 
                                     try {
+                                        const stepSummaryPayload = {
+                                            stepId: 'research.report',
+                                            summary:
+                                                workflowOutput.report.summary ??
+                                                workflowOutput.report.title,
+                                            timestamp: Date.now(),
+                                        };
                                         writer.write({
                                             type: 'data-step-summary',
-                                            data: {
-                                                stepId: 'research.report',
-                                                summary:
-                                                    result.report.executiveSummary ??
-                                                    result.report.title,
-                                                timestamp: Date.now(),
-                                            },
+                                            data: stepSummaryPayload,
+                                        });
+                                        storedParts.push({
+                                            type: 'data',
+                                            name: 'step-summary',
+                                            data: stepSummaryPayload,
                                         });
                                     } catch (err) {
                                         console.warn(
@@ -1111,15 +1309,21 @@ export async function POST(request: NextRequest) {
                                     }
 
                                     try {
+                                        const reportPayload = {
+                                            runId: run.id,
+                                            reportId: workflowOutput.reportDbId,
+                                            reportType: 'research',
+                                            report: workflowOutput.report,
+                                            timestamp: Date.now(),
+                                        };
                                         writer.write({
                                             type: 'data-report',
-                                            data: {
-                                                runId: run.id,
-                                                reportId: result.reportDbId,
-                                                reportType: 'research',
-                                                report: result.report,
-                                                timestamp: Date.now(),
-                                            },
+                                            data: reportPayload,
+                                        });
+                                        storedParts.push({
+                                            type: 'data',
+                                            name: 'report',
+                                            data: reportPayload,
                                         });
                                     } catch (err) {
                                         console.warn(
@@ -1202,35 +1406,39 @@ export async function POST(request: NextRequest) {
                 const combinedContext = [
                     ...(modeContext
                         ? [
-                              {
-                                  role: 'system' as const,
-                                  content: modeContext,
-                              },
-                          ]
+                            {
+                                role: 'system' as const,
+                                content: modeContext,
+                            },
+                        ]
                         : []),
                     ...(stockContext.context ?? []),
                     ...(reportContext
                         ? [
-                              {
-                                  role: 'system' as const,
-                                  content: `Follow-up context summary:\n${reportContext}`,
-                              },
-                          ]
+                            {
+                                role: 'system' as const,
+                                content: `Follow-up context summary:\n${reportContext}`,
+                            },
+                        ]
                         : []),
                 ];
 
                 const stream = await handleChatStream({
                     mastra,
-                    agentId: 'qaAgent',
+                    agentId: enableTools ? resolveAgentId(mode) : resolveLiteAgentId(mode),
                     params: {
                         ...params,
                         messages: sanitizeMessagesForModel(params.messages) as unknown as UIMessage[],
                     },
                     defaultOptions: {
-                        memory: {
-                            thread: { id: session.id },
-                            resource: user?.id ? String(user.id) : session.id,
-                        },
+                        ...(ENABLE_MASTRA_MEMORY
+                            ? {
+                                memory: {
+                                    thread: { id: session.id },
+                                    resource: user?.id ? String(user.id) : session.id,
+                                },
+                            }
+                            : {}),
                         maxSteps: DEFAULT_MODE_MAX_STEPS[mode] ?? 4,
                         ...(combinedContext.length > 0 ? { context: combinedContext } : {}),
                         ...(instantToolChoice ? { toolChoice: instantToolChoice } : {}),
@@ -1247,6 +1455,72 @@ export async function POST(request: NextRequest) {
                 let sawErrorText: string | undefined;
                 let sawAbort = false;
                 let finalized = false;
+                const storedParts: Array<Record<string, unknown>> = [];
+                const toolCallSanitizer = createToolCallSanitizer();
+                const seenToolInputs = new Set<string>();
+                const suppressedToolCallIds = new Set<string>();
+
+                const buildToolParts = () => {
+                    const parts: Array<Record<string, unknown>> = [];
+
+                    for (const call of toolCallsById.values()) {
+                        const toolName =
+                            typeof call.toolName === 'string' && call.toolName.trim().length > 0
+                                ? call.toolName
+                                : null;
+
+                        const base =
+                            toolName
+                                ? {
+                                    type: `tool-${toolName}`,
+                                    toolCallId: call.toolCallId,
+                                }
+                                : {
+                                    type: 'dynamic-tool',
+                                    toolName: call.toolName ?? 'tool',
+                                    toolCallId: call.toolCallId,
+                                };
+
+                        const input = call.input ?? {};
+
+                        if (call.status === 'completed') {
+                            parts.push({
+                                ...base,
+                                state: 'output-available',
+                                input,
+                                output: call.output ?? {},
+                                ...(call.providerExecuted !== undefined
+                                    ? { providerExecuted: call.providerExecuted }
+                                    : {}),
+                            });
+                            continue;
+                        }
+
+                        if (call.status === 'error') {
+                            parts.push({
+                                ...base,
+                                state: 'output-error',
+                                input,
+                                errorText: call.errorText ?? '工具执行失败',
+                                ...(call.providerExecuted !== undefined
+                                    ? { providerExecuted: call.providerExecuted }
+                                    : {}),
+                            });
+                            continue;
+                        }
+
+                        parts.push({
+                            ...base,
+                            state: 'input-available',
+                            input,
+                            ...(call.providerExecuted !== undefined
+                                ? { providerExecuted: call.providerExecuted }
+                                : {}),
+                        });
+                    }
+
+                    return parts;
+                };
 
                 const finalize = async (status: 'finished' | 'cancelled' | 'failed') => {
                     if (finalized) return;
@@ -1259,12 +1533,25 @@ export async function POST(request: NextRequest) {
                         });
                     }
 
+                    const tail = toolCallSanitizer.flush();
+                    if (tail) assistantText += tail;
+
                     const toolCalls = Array.from(toolCallsById.values());
+
+                    if (assistantText.trim()) {
+                        storedParts.unshift({ type: 'text', text: assistantText });
+                    }
+
+                    const toolParts = buildToolParts();
+                    if (toolParts.length > 0) {
+                        const insertIndex = assistantText.trim() ? 1 : 0;
+                        storedParts.splice(insertIndex, 0, ...toolParts);
+                    }
 
                     await db
                         .update(chatMessages)
                         .set({
-                            content: assistantText,
+                            content: buildStoredParts(storedParts),
                             metadata: {
                                 source: 'agents',
                                 mode,
@@ -1289,34 +1576,152 @@ export async function POST(request: NextRequest) {
                     const type = (chunk as { type?: unknown }).type;
                     if (type === 'text-delta') {
                         const delta = (chunk as { delta?: unknown }).delta;
-                        if (typeof delta === 'string') assistantText += delta;
+                        if (typeof delta === 'string') {
+                            const cleaned = toolCallSanitizer.update(delta);
+                            if (cleaned) {
+                                assistantText += cleaned;
+                                return {
+                                    forward: true,
+                                    chunk: { ...(chunk as Record<string, unknown>), delta: cleaned },
+                                };
+                            }
+                            return { forward: false };
+                        }
+                    }
+
+                    if (type === 'data') {
+                        const name = (chunk as { name?: unknown }).name;
+                        const data = (chunk as { data?: unknown }).data;
+                        if (typeof name === 'string') {
+                            storedParts.push({
+                                type: 'data',
+                                name,
+                                data,
+                            });
+                        }
+                    }
+
+                    if (typeof type === 'string' && type.startsWith('data-')) {
+                        const name = type.replace('data-', '');
+                        const data = (chunk as { data?: unknown }).data;
+                        storedParts.push({
+                            type: 'data',
+                            name,
+                            data,
+                        });
                     }
 
                     if (type === 'tool-input-available') {
                         const toolCallId = (chunk as { toolCallId?: unknown }).toolCallId;
                         const toolName = (chunk as { toolName?: unknown }).toolName;
+                        const input = (chunk as { input?: unknown }).input;
+                        const providerExecuted = (chunk as { providerExecuted?: unknown }).providerExecuted;
                         if (typeof toolCallId === 'string' && typeof toolName === 'string') {
+                            const dedupeKey = `${toolName}:${stableStringify(input ?? {})}`;
+                            if (seenToolInputs.has(dedupeKey)) {
+                                suppressedToolCallIds.add(toolCallId);
+                                return { forward: false };
+                            }
+                            seenToolInputs.add(dedupeKey);
                             toolCallsById.set(toolCallId, {
                                 toolCallId,
                                 toolName,
                                 status: 'called',
+                                input,
+                                providerExecuted:
+                                    typeof providerExecuted === 'boolean' ? providerExecuted : undefined,
                             });
                         }
                     }
 
                     if (type === 'tool-output-available') {
                         const toolCallId = (chunk as { toolCallId?: unknown }).toolCallId;
+                        const output = (chunk as { output?: unknown }).output;
                         if (typeof toolCallId === 'string') {
+                            if (suppressedToolCallIds.has(toolCallId)) {
+                                return { forward: false };
+                            }
                             const existing = toolCallsById.get(toolCallId);
-                            if (existing) toolCallsById.set(toolCallId, { ...existing, status: 'completed' });
+                            if (existing) {
+                                toolCallsById.set(toolCallId, {
+                                    ...existing,
+                                    status: 'completed',
+                                    output,
+                                });
+                            } else {
+                                const rawToolName = (chunk as { toolName?: unknown }).toolName;
+                                const toolName =
+                                    typeof rawToolName === 'string' && rawToolName.trim().length > 0
+                                        ? rawToolName
+                                        : 'tool';
+                                toolCallsById.set(toolCallId, {
+                                    toolCallId,
+                                    toolName,
+                                    status: 'completed',
+                                    output,
+                                });
+                            }
                         }
                     }
 
                     if (type === 'tool-output-error') {
                         const toolCallId = (chunk as { toolCallId?: unknown }).toolCallId;
                         if (typeof toolCallId === 'string') {
+                            if (suppressedToolCallIds.has(toolCallId)) {
+                                return { forward: false };
+                            }
                             const existing = toolCallsById.get(toolCallId);
-                            if (existing) toolCallsById.set(toolCallId, { ...existing, status: 'error' });
+                            const errorText = (chunk as { errorText?: unknown }).errorText;
+                            if (existing) {
+                                toolCallsById.set(toolCallId, {
+                                    ...existing,
+                                    status: 'error',
+                                    errorText:
+                                        typeof errorText === 'string' ? errorText : 'tool error',
+                                });
+                            } else {
+                                const rawToolName = (chunk as { toolName?: unknown }).toolName;
+                                const toolName =
+                                    typeof rawToolName === 'string' && rawToolName.trim().length > 0
+                                        ? rawToolName
+                                        : 'tool';
+                                toolCallsById.set(toolCallId, {
+                                    toolCallId,
+                                    toolName,
+                                    status: 'error',
+                                    errorText:
+                                        typeof errorText === 'string' ? errorText : 'tool error',
+                                });
+                            }
+                        }
+                    }
+
+                    if (type === 'tool-output-denied') {
+                        const toolCallId = (chunk as { toolCallId?: unknown }).toolCallId;
+                        if (typeof toolCallId === 'string') {
+                            if (suppressedToolCallIds.has(toolCallId)) {
+                                return { forward: false };
+                            }
+                            const existing = toolCallsById.get(toolCallId);
+                            if (existing) {
+                                toolCallsById.set(toolCallId, {
+                                    ...existing,
+                                    status: 'error',
+                                    errorText: 'tool output denied',
+                                });
+                            } else {
+                                const rawToolName = (chunk as { toolName?: unknown }).toolName;
+                                const toolName =
+                                    typeof rawToolName === 'string' && rawToolName.trim().length > 0
+                                        ? rawToolName
+                                        : 'tool';
+                                toolCallsById.set(toolCallId, {
+                                    toolCallId,
+                                    toolName,
+                                    status: 'error',
+                                    errorText: 'tool output denied',
+                                });
+                            }
                         }
                     }
 
@@ -1328,6 +1733,8 @@ export async function POST(request: NextRequest) {
                     if (type === 'abort') {
                         sawAbort = true;
                     }
+
+                    return { forward: true, chunk };
                 };
 
                 const reader = stream.getReader();
@@ -1336,6 +1743,42 @@ export async function POST(request: NextRequest) {
                         try {
                             const { value, done } = await reader.read();
                             if (done) {
+                                const tail = toolCallSanitizer.flush();
+                                if (tail) assistantText += tail;
+                                const summaryText = buildStepSummary(assistantText);
+                                if (summaryText) {
+                                    const stepSummaryPayload = {
+                                        stepId: mode,
+                                        summary: summaryText,
+                                        timestamp: Date.now(),
+                                    };
+                                    storedParts.push({
+                                        type: 'data',
+                                        name: 'step-summary',
+                                        data: stepSummaryPayload,
+                                    });
+                                    controller.enqueue({
+                                        type: 'data-step-summary',
+                                        data: stepSummaryPayload,
+                                    });
+                                }
+
+                                if (mode === CHAT_MODES.RIGOROUS && summaryText) {
+                                    const decisionPayload = {
+                                        decision: '已完成严谨分析',
+                                        rationale: summaryText,
+                                        timestamp: Date.now(),
+                                    };
+                                    storedParts.push({
+                                        type: 'data',
+                                        name: 'decision',
+                                        data: decisionPayload,
+                                    });
+                                    controller.enqueue({
+                                        type: 'data-decision',
+                                        data: decisionPayload,
+                                    });
+                                }
                                 await finalize(
                                     sawErrorText ? 'failed' : sawAbort ? 'cancelled' : 'finished',
                                 );
@@ -1343,8 +1786,10 @@ export async function POST(request: NextRequest) {
                                 return;
                             }
 
-                            processChunk(value);
-                            controller.enqueue(value);
+                            const processed = processChunk(value);
+                            if (processed?.forward) {
+                                controller.enqueue(processed.chunk);
+                            }
                         } catch (err) {
                             sawErrorText = err instanceof Error ? err.message : String(err);
                             await finalize('failed');
@@ -1364,7 +1809,9 @@ export async function POST(request: NextRequest) {
                 const normalizedStream = normalizeToolInputStream(
                     instrumentedStream as ReadableStream<Record<string, unknown>>,
                 );
-                const response = createUIMessageStreamResponse({ stream: normalizedStream });
+                const response = createUIMessageStreamResponse({
+                    stream: normalizedStream as unknown as Parameters<typeof createUIMessageStreamResponse>[0]['stream'],
+                });
                 response.headers.set('x-chat-session-id', String(session.id));
                 return response;
             }
@@ -1478,33 +1925,17 @@ export async function GET(request: NextRequest) {
                         { status: 400 },
                     );
                 }
-
-                const agent = mastra.getAgent('qaAgent');
-                const memory = await agent.getMemory();
-
-                if (!memory) {
-                    // Fallback to empty if no memory configured
-                    return NextResponse.json({ success: true, messages: [] });
-                }
-
-                // Use memory.recall to get messages for this thread
-                const result = await memory.recall({ threadId: sessionId });
-                const mastraMessages = result.messages;
-
-                // Map Mastra messages to UI format if needed
-                // Assuming mastraMessages are compatible or need slight mapping
-                // The frontend expects { id, role, content, createdAt }
-                const messages = mastraMessages.map((m: any) => ({
-                    id: m.id,
-                    role: m.role,
-                    content: m.content ?
-                        (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))
-                        : '',
-                    createdAt: m.createdAt,
-                    // Handle tool invocations if present in Mastra message
-                    // Mastra messages might store tool calls in `toolCalls` or `toolInvocations`
-                    toolInvocations: m.toolCalls || m.toolInvocations,
-                }));
+                const messages = await db
+                    .select({
+                        id: chatMessages.id,
+                        role: chatMessages.role,
+                        content: chatMessages.content,
+                        createdAt: chatMessages.createdAt,
+                        metadata: chatMessages.metadata,
+                    })
+                    .from(chatMessages)
+                    .where(eq(chatMessages.sessionId, sessionId))
+                    .orderBy(chatMessages.createdAt);
 
                 return NextResponse.json({ success: true, messages });
             }
@@ -1567,6 +1998,107 @@ export async function GET(request: NextRequest) {
                 });
 
                 return NextResponse.json({ success: true, periodKey, quotas });
+            }
+
+            case 'get_events': {
+                const runId = searchParams.get('run_id');
+                if (!runId) {
+                    return NextResponse.json({ error: 'run_id is required' }, { status: 400 });
+                }
+                const runIdNum = Number.parseInt(runId, 10);
+                if (Number.isNaN(runIdNum)) {
+                    return NextResponse.json({ error: 'Invalid run_id' }, { status: 400 });
+                }
+
+                const events = await db
+                    .select({
+                        id: agentRunEvents.id,
+                        type: agentRunEvents.type,
+                        payload: agentRunEvents.payload,
+                        createdAt: agentRunEvents.createdAt,
+                    })
+                    .from(agentRunEvents)
+                    .where(eq(agentRunEvents.agentRunId, runIdNum))
+                    .orderBy(agentRunEvents.id);
+
+                return NextResponse.json({ success: true, events });
+            }
+
+            case 'get_report': {
+                const runId = searchParams.get('run_id');
+                if (!runId) {
+                    return NextResponse.json({ error: 'run_id is required' }, { status: 400 });
+                }
+                const runIdNum = Number.parseInt(runId, 10);
+                if (Number.isNaN(runIdNum)) {
+                    return NextResponse.json({ error: 'Invalid run_id' }, { status: 400 });
+                }
+
+                const [report] = await db
+                    .select()
+                    .from(reports)
+                    .where(eq(reports.agentRunId, runIdNum))
+                    .orderBy(desc(reports.createdAt))
+                    .limit(1);
+
+                if (!report) {
+                    return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+                }
+
+                return NextResponse.json({ success: true, report });
+            }
+
+            case 'get_run_status': {
+                const runId = searchParams.get('run_id');
+                if (!runId) {
+                    return NextResponse.json({ error: 'run_id is required' }, { status: 400 });
+                }
+                const runIdNum = Number.parseInt(runId, 10);
+                if (Number.isNaN(runIdNum)) {
+                    return NextResponse.json({ error: 'Invalid run_id' }, { status: 400 });
+                }
+
+                const [run] = await db
+                    .select()
+                    .from(agentRuns)
+                    .where(eq(agentRuns.id, runIdNum))
+                    .limit(1);
+
+                if (!run) {
+                    return NextResponse.json({ error: 'Run not found' }, { status: 404 });
+                }
+
+                const steps = await db
+                    .select({
+                        stepName: agentRunSteps.stepName,
+                        status: agentRunSteps.status,
+                        startedAt: agentRunSteps.startedAt,
+                        completedAt: agentRunSteps.completedAt,
+                    })
+                    .from(agentRunSteps)
+                    .where(eq(agentRunSteps.agentRunId, runIdNum))
+                    .orderBy(agentRunSteps.stepOrder);
+
+                const [thinkingEvent] = await db
+                    .select({
+                        payload: agentRunEvents.payload,
+                    })
+                    .from(agentRunEvents)
+                    .where(
+                        and(
+                            eq(agentRunEvents.agentRunId, runIdNum),
+                            eq(agentRunEvents.type, 'thinking'),
+                        ),
+                    )
+                    .orderBy(desc(agentRunEvents.id))
+                    .limit(1);
+
+                return NextResponse.json({
+                    success: true,
+                    run,
+                    steps,
+                    thinking: thinkingEvent?.payload ?? null,
+                });
             }
 
             default:

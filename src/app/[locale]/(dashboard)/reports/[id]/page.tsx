@@ -7,7 +7,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db/drizzle';
 import { agentRuns, reports, reportSections } from '@/lib/db/schema';
 import { ReportViewer } from '@features/agents/components/report-viewer';
-import type { NinePartReport, ConsensusReport } from '@features/agents/lib/schemas';
+import type { TenPartReport, ConsensusReport } from '@features/agents/lib/schemas';
 
 // ============================================================
 // 报告详情页 - 支持流式渲染和静态展示
@@ -44,10 +44,10 @@ async function getReportData(runId: number) {
     // 如果有报告，获取其 sections
     const sections = report
         ? await db
-              .select()
-              .from(reportSections)
-              .where(eq(reportSections.reportId, report.id))
-              .orderBy(asc(reportSections.sectionOrder))
+            .select()
+            .from(reportSections)
+            .where(eq(reportSections.reportId, report.id))
+            .orderBy(asc(reportSections.sectionOrder))
         : [];
 
     return {
@@ -78,7 +78,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
     const agentType = run.agentType as 'consensus' | 'research' | 'qa';
 
     // structuredData 是 jsonb，需要类型断言
-    const initialReport = (report?.structuredData as NinePartReport | ConsensusReport | null) ?? null;
+    const initialReport = (report?.structuredData as TenPartReport | ConsensusReport | null) ?? null;
 
     // 判断是否正在运行中 (需要流式展示)
     const isRunning = run.status === 'running' || run.status === 'pending';

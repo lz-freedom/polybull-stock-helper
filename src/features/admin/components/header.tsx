@@ -35,9 +35,9 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         : user.email?.[0]?.toUpperCase() || 'U';
 
     return (
-        <header className="h-16 bg-white border-b flex items-center justify-between px-6">
+        <header className="h-16 bg-card border-b flex items-center justify-between px-6">
             <div>
-                <h1 className="text-lg font-semibold text-gray-900">{tAdmin('title')}</h1>
+                <h1 className="text-lg font-semibold text-muted-foreground">{tAdmin('title')}</h1>
             </div>
 
             <div className="flex items-center gap-4">
@@ -55,8 +55,8 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                     <DropdownMenuContent align="end" className="w-56">
                         <div className="px-2 py-1.5">
                             <p className="text-sm font-medium">{user.name || 'User'}</p>
-                            <p className="text-xs text-gray-500">{user.email}</p>
-                            <p className="text-xs text-orange-600 capitalize mt-1">{user.role}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            <p className="text-xs text-warning capitalize mt-1">{user.role}</p>
                         </div>
                         <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/sign-in' })}>
                             <LogOut className="mr-2 h-4 w-4" />

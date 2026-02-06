@@ -9,8 +9,8 @@ import { ResearchReportView } from './research-report';
 import { StreamableReportView } from './streamable-report-view';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import type { NinePartReport, ConsensusReport, StreamableReport } from '../lib/schemas';
-import { NinePartReportSchema, ConsensusReportSchema, StreamableReportSchema } from '../lib/schemas';
+import type { TenPartReport, ConsensusReport, StreamableReport } from '../lib/schemas';
+import { TenPartReportSchema, ConsensusReportSchema, StreamableReportSchema } from '../lib/schemas';
 
 // ============================================================
 // ReportViewer - 报告查看器组件
@@ -20,7 +20,7 @@ import { NinePartReportSchema, ConsensusReportSchema, StreamableReportSchema } f
 interface ReportViewerProps {
     agentRunId: number;
     agentType: 'consensus' | 'research' | 'qa';
-    initialReport?: NinePartReport | ConsensusReport | StreamableReport | null;
+    initialReport?: TenPartReport | ConsensusReport | StreamableReport | null;
     initialStatus?: string;
     reportTitle?: string;
     reportSummary?: string;
@@ -42,7 +42,7 @@ export function ReportViewer({
     const [runStatus, setRunStatus] = useState(initialStatus || 'pending');
     const [showTimeline, setShowTimeline] = useState(isStreaming);
 
-    const [report, setReport] = useState<NinePartReport | ConsensusReport | StreamableReport | null>(initialReport || null);
+    const [report, setReport] = useState<TenPartReport | ConsensusReport | StreamableReport | null>(initialReport || null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
@@ -53,21 +53,21 @@ export function ReportViewer({
     const fetchReport = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/mastra/workflows/${agentType}/result?runId=${agentRunId}`);
+            const res = await fetch(`/api/agents/chat?action=get_report&run_id=${agentRunId}`);
             if (!res.ok) throw new Error('Failed to fetch report');
             const data = await res.json();
             
             // data.report contains the report object
             // If it has structuredData, we use that if it matches StreamableReport
-            // Or we check if data.report matches NinePartReport/ConsensusReport
+            // Or we check if data.report matches TenPartReport/ConsensusReport
             
             if (data.report) {
                 // If the report has structuredData matching the new schema
                 if (data.report.structuredData && isStreamableReport(data.report.structuredData)) {
                     setReport(data.report.structuredData);
                 } else {
-                    // Legacy fallback
-                    setReport(data.report);
+                    // Legacy fallback: prefer structuredData, otherwise content
+                    setReport(data.report.structuredData ?? data.report.content ?? null);
                 }
             }
         } catch (err) {
@@ -98,17 +98,17 @@ export function ReportViewer({
     };
 
     return (
-        <div className={cn('space-y-6', className)}>
+        <div className={cn('space-y-6 font-report', className)}>
             {/* 报告标题和摘要 */}
             {(reportTitle || reportSummary) && (
                 <div className="mb-6">
                     {reportTitle && (
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                        <h1 className="text-2xl font-bold text-muted-foreground mb-2">
                             {reportTitle}
                         </h1>
                     )}
                     {reportSummary && (
-                        <p className="text-gray-600 dark:text-gray-400">{reportSummary}</p>
+                        <p className="text-muted-foreground">{reportSummary}</p>
                     )}
                 </div>
             )}
@@ -134,16 +134,16 @@ export function ReportViewer({
 
             {/* 加载/错误状态 */}
             {isLoading && !report && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
                     <p>正在加载报告...</p>
                 </div>
             )}
 
             {error && (
-                <Card className="border-red-200 bg-red-50 dark:bg-red-900/20">
+                <Card className="border-destructive/30 bg-destructive/10 dark:bg-destructive/10">
                     <CardContent className="py-4">
-                        <p className="text-red-600 dark:text-red-400">
+                        <p className="text-destructive dark:text-destructive">
                             加载报告时发生错误: {error.message}
                         </p>
                     </CardContent>
@@ -158,7 +158,7 @@ export function ReportViewer({
                     ) : (
                         <>
                             {agentType === 'research' ? (
-                                <ResearchReportView report={report as Partial<NinePartReport>} />
+                                <ResearchReportView report={report as Partial<TenPartReport>} />
                             ) : (
                                 <ConsensusReportView report={report as Partial<ConsensusReport>} />
                             )}
@@ -170,7 +170,7 @@ export function ReportViewer({
             {/* 无数据且非加载状态 */}
             {!report && !isLoading && !error && runStatus === 'completed' && (
                 <Card>
-                    <CardContent className="py-8 text-center text-gray-500">
+                    <CardContent className="py-8 text-center text-muted-foreground">
                         <p>暂无报告数据</p>
                     </CardContent>
                 </Card>

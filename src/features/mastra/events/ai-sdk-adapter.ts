@@ -8,8 +8,8 @@
 // DataPart 类型定义（基于 AI SDK 标准）
 export type DataPart =
   | { type: 'data'; name: string; data: unknown }
-  | { type: 'tool-call'; toolCallId: string; toolName: string; args: unknown }
-  | { type: 'tool-result'; toolCallId: string; result: unknown }
+  | { type: 'tool-call'; toolCallId: string; toolName: string; input: unknown }
+  | { type: 'tool-result'; toolCallId: string; toolName: string; output: unknown }
   | { type: 'reasoning'; reasoning: string }
   | { type: 'error'; error: string };
 import type { WorkflowEvent } from './types';
@@ -85,7 +85,7 @@ export function toDataPart(event: WorkflowEvent): DataPart | null {
                 type: 'tool-call',
                 toolCallId: event.callId,
                 toolName: event.toolName,
-                args: event.args,
+                input: event.args,
             };
 
         case 'tool-result':
@@ -93,7 +93,8 @@ export function toDataPart(event: WorkflowEvent): DataPart | null {
             return {
                 type: 'tool-result',
                 toolCallId: event.callId,
-                result: event.result,
+                toolName: 'tool',
+                output: event.result,
             };
 
         case 'sources':
@@ -135,10 +136,60 @@ export function toDataPart(event: WorkflowEvent): DataPart | null {
             };
 
         case 'thinking':
-            // 转换为 AI SDK 标准 reasoning part
             return {
-                type: 'reasoning',
-                reasoning: event.message,
+                type: 'data',
+                name: 'mastra.thinking',
+                data: {
+                    message: event.message,
+                    timestamp: event.timestamp,
+                },
+            };
+        case 'round':
+            return {
+                type: 'data',
+                name: 'mastra.round',
+                data: {
+                    round: event.round,
+                    totalRounds: event.totalRounds,
+                    speaker: event.speaker,
+                    agenda: event.agenda,
+                    timestamp: event.timestamp,
+                },
+            };
+
+        case 'step-summary':
+            return {
+                type: 'data',
+                name: 'mastra.step-summary',
+                data: {
+                    stepId: event.stepId,
+                    summary: event.summary,
+                    timestamp: event.timestamp,
+                },
+            };
+
+        case 'decision':
+            return {
+                type: 'data',
+                name: 'mastra.decision',
+                data: {
+                    decision: event.decision,
+                    rationale: event.rationale,
+                    timestamp: event.timestamp,
+                },
+            };
+
+        case 'report':
+            return {
+                type: 'data',
+                name: 'mastra.report',
+                data: {
+                    reportId: event.reportId,
+                    reportType: event.reportType,
+                    report: event.report,
+                    runId: event.runId,
+                    timestamp: event.timestamp,
+                },
             };
 
         default:

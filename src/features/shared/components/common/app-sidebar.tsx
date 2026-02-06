@@ -63,7 +63,7 @@ function ChatHistoryList({ locale, pathname }: { locale: string, pathname: strin
     const t = useTranslations('sidebar');
     const { data, error } = useSWR('/api/agents/chat?action=get_user_sessions&limit=20', fetcher, {
         refreshInterval: 0,
-        revalidateOnFocus: true
+        revalidateOnFocus: true,
     });
 
     if (!data?.sessions) return null;
@@ -78,10 +78,10 @@ function ChatHistoryList({ locale, pathname }: { locale: string, pathname: strin
                     key={session.id}
                     href={`/${locale}/chat/${session.id}`}
                     className={cn(
-                        "block rounded-md px-2 py-1.5 text-sm transition-colors truncate",
+                        'block rounded-md px-2 py-1.5 text-sm transition-colors truncate',
                         pathname.includes(session.id)
-                            ? "bg-zinc-100 dark:bg-zinc-800 text-foreground font-medium"
-                            : "text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-foreground"
+                            ? 'bg-muted text-foreground font-medium'
+                            : 'text-muted-foreground hover:bg-muted dark:hover:bg-muted hover:text-foreground',
                     )}
                 >
                     <span className="truncate">{session.title || 'New Chat'}</span>
@@ -191,12 +191,12 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Link
-                                        href={`/${locale}`}
+                                        href={`/${locale}/chat/new`}
                                         className={cn(
                                             'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                                            pathname === `/${locale}`
-                                                ? 'bg-sidebar-accent dark:bg-zinc-800 text-foreground font-medium'
-                                                : 'text-muted-foreground hover:bg-sidebar-accent dark:hover:bg-zinc-800/50 hover:text-foreground',
+                                            pathname === `/${locale}/chat/new`
+                                                ? 'bg-sidebar-accent text-foreground font-medium'
+                                                : 'text-muted-foreground hover:bg-sidebar-accent dark:hover:bg-muted hover:text-foreground',
                                             collapsed && 'justify-center px-0 w-9 mx-auto py-2',
                                         )}
                                     >
@@ -226,14 +226,14 @@ export function AppSidebar({ locale }: AppSidebarProps) {
                                                 className={cn(
                                                     'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
                                                     isActive
-                                                        ? 'bg-sidebar-accent dark:bg-zinc-800 text-foreground font-medium'
-                                                        : 'text-muted-foreground hover:bg-sidebar-accent dark:hover:bg-zinc-800/50 hover:text-foreground',
+                                                        ? 'bg-sidebar-accent text-foreground font-medium'
+                                                        : 'text-muted-foreground hover:bg-sidebar-accent dark:hover:bg-muted hover:text-foreground',
                                                     collapsed && 'justify-center px-0 w-9 mx-auto py-2',
                                                 )}
                                             >
-                                                <item.icon className={cn('h-4 w-4 shrink-0', isActive ? "text-foreground" : "text-muted-foreground", item.isNew && 'text-rose-500')} />
+                                                <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-foreground' : 'text-muted-foreground', item.isNew && 'text-destructive')} />
                                                 {!collapsed && (
-                                                    <span className={cn('flex-1 truncate', item.isNew && 'text-rose-500')}>
+                                                    <span className={cn('flex-1 truncate', item.isNew && 'text-destructive')}>
                                                         {t(item.labelKey)}
                                                     </span>
                                                 )}

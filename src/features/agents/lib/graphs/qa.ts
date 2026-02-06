@@ -178,7 +178,7 @@ export async function sendMessage(input: {
         })
         .returning();
 
-    const agent = mastra.getAgent('qaAgent');
+    const agent = mastra.getAgent('instantLiteAgent');
     const memory = {
         thread: { id: input.sessionId },
         resource: input.userId ? String(input.userId) : input.sessionId,
@@ -206,15 +206,15 @@ export async function sendMessage(input: {
             ...(system ? { system } : {}),
             ...(detectedSymbol
                 ? {
-                      context: [
-                          {
-                              role: 'system',
-                              content: `Detected stock for this thread: ${detectedSymbol}${
-                                  detectedExchange ? ` (${detectedExchange})` : ''
-                              }. If you need current data, call getStockSnapshot first, then summarize the key takeaways.`,
-                          },
-                      ],
-                  }
+                    context: [
+                        {
+                            role: 'system',
+                            content: `Detected stock for this thread: ${detectedSymbol}${
+                                detectedExchange ? ` (${detectedExchange})` : ''
+                            }. If you need current data, call getStockSnapshot first, then summarize the key takeaways.`,
+                        },
+                    ],
+                }
                 : {}),
             providerOptions: {
                 openai: {

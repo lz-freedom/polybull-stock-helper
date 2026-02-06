@@ -12,9 +12,9 @@ export default function MainLayout({ children, params }: { children: React.React
     const isChatRoute = pathname.startsWith(`/${locale}/chat`);
     return (
         <SessionProvider>
-            <div className="h-screen overflow-hidden bg-content flex">
+            <div className="flex h-screen overflow-hidden bg-background">
                 <AppSidebar locale={locale} />
-                <main className="flex-1 flex flex-col relative bg-content overflow-hidden">
+                <main className="relative flex flex-1 flex-col overflow-hidden bg-background">
                     {!isChatRoute && (
                         <div
                             className="absolute inset-0 pointer-events-none"

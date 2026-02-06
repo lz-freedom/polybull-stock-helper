@@ -5,29 +5,30 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import type { NinePartReport, SectionContent } from '../lib/schemas';
+import type { TenPartReport, SectionContent, ResearchReport } from '../lib/schemas';
 
 interface ResearchReportProps {
-    report: Partial<NinePartReport>;
+    report: Partial<TenPartReport> | Partial<ResearchReport>;
     className?: string;
 }
 
 interface SectionMeta {
-    key: keyof NinePartReport;
+    key: Exclude<keyof TenPartReport, 'title' | 'summary'>;
     label: string;
     icon: string;
 }
 
-const NINE_PART_SECTIONS: SectionMeta[] = [
-    { key: 'core_overview', label: '核心概览', icon: '📊' },
-    { key: 'business_model', label: '商业模式', icon: '💼' },
-    { key: 'competitive_advantage', label: '竞争优势', icon: '🏆' },
-    { key: 'financial_quality', label: '财务质量', icon: '📈' },
-    { key: 'governance', label: '管理层治理', icon: '👥' },
-    { key: 'valuation', label: '估值分析', icon: '💰' },
-    { key: 'future_outlook', label: '未来展望', icon: '🔮' },
-    { key: 'risks', label: '风险提示', icon: '⚠️' },
-    { key: 'conclusion', label: '投资结论', icon: '✅' },
+const TEN_PART_SECTIONS: SectionMeta[] = [
+    { key: 'business', label: '业务', icon: '📊' },
+    { key: 'revenue', label: '收入', icon: '💼' },
+    { key: 'industry', label: '行业', icon: '🏭' },
+    { key: 'competition', label: '竞争', icon: '🏆' },
+    { key: 'financial', label: '财务', icon: '📈' },
+    { key: 'risk', label: '风险', icon: '⚠️' },
+    { key: 'management', label: '管理层', icon: '👥' },
+    { key: 'scenario', label: '情景', icon: '🧭' },
+    { key: 'valuation', label: '估值', icon: '💰' },
+    { key: 'long_thesis', label: '长期论文', icon: '🧠' },
 ];
 
 interface SectionCardProps {
@@ -44,7 +45,7 @@ function SectionCard({ section, label, icon, isExpanded, onToggle }: SectionCard
         <Card className="overflow-hidden">
             <button
                 type="button"
-                className="w-full text-left p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="w-full text-left p-6 cursor-pointer hover:bg-muted dark:hover:bg-muted transition-colors"
                 onClick={onToggle}
             >
                 <div className="flex items-center justify-between">
@@ -58,9 +59,9 @@ function SectionCard({ section, label, icon, isExpanded, onToggle }: SectionCard
                         )}
                     </div>
                     {isExpanded ? (
-                        <ChevronUp className="h-5 w-5 text-gray-400" />
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
                     ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400" />
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
                     )}
                 </div>
             </button>
@@ -68,12 +69,12 @@ function SectionCard({ section, label, icon, isExpanded, onToggle }: SectionCard
                 <CardContent className="border-t">
                     {section.keyPoints && section.keyPoints.length > 0 && (
                         <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <h4 className="text-sm font-medium text-muted-foreground mb-2">
                                 关键要点
                             </h4>
                             <ul className="list-disc list-inside space-y-1">
                                 {section.keyPoints.map((point) => (
-                                    <li key={point} className="text-sm text-gray-600 dark:text-gray-400">
+                                    <li key={point} className="text-sm text-muted-foreground">
                                         {point}
                                     </li>
                                 ))}
@@ -83,7 +84,7 @@ function SectionCard({ section, label, icon, isExpanded, onToggle }: SectionCard
 
                     {section.content && (
                         <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                            <div className="whitespace-pre-wrap text-muted-foreground">
                                 {section.content}
                             </div>
                         </div>
@@ -91,19 +92,19 @@ function SectionCard({ section, label, icon, isExpanded, onToggle }: SectionCard
 
                     {section.evidence && section.evidence.length > 0 && (
                         <div className="mt-4 pt-4 border-t">
-                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <h4 className="text-sm font-medium text-muted-foreground mb-2">
                                 数据来源
                             </h4>
                             <div className="space-y-2">
                                 {section.evidence.map((ev) => (
                                     <div
                                         key={`${ev.claim}-${ev.source}`}
-                                        className="text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded"
+                                        className="text-xs bg-muted p-2 rounded"
                                     >
                                         <p className="font-medium">{ev.claim}</p>
-                                        <p className="text-gray-500">{ev.source}</p>
+                                        <p className="text-muted-foreground">{ev.source}</p>
                                         {ev.dataPoint && (
-                                            <p className="text-gray-400 mt-1">{ev.dataPoint}</p>
+                                            <p className="text-muted-foreground mt-1">{ev.dataPoint}</p>
                                         )}
                                     </div>
                                 ))}
@@ -116,9 +117,9 @@ function SectionCard({ section, label, icon, isExpanded, onToggle }: SectionCard
     );
 }
 
-// 九部分研究报告渲染组件 - 展示完整股票研究分析
+// 十部分研究报告渲染组件 - 展示完整股票研究分析
 export function ResearchReportView({ report, className }: ResearchReportProps) {
-    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['core_overview']));
+    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['business']));
 
     const toggleSection = useCallback((key: string) => {
         setExpandedSections((prev) => {
@@ -132,16 +133,23 @@ export function ResearchReportView({ report, className }: ResearchReportProps) {
         });
     }, []);
 
+    const moduleRecord = useMemo(() => {
+        if ('modules' in report && report.modules) {
+            return report.modules as Partial<Record<string, SectionContent>>;
+        }
+        return report as Partial<Record<string, SectionContent>>;
+    }, [report]);
+
     const availableSections = useMemo(() => {
-        return NINE_PART_SECTIONS.filter((s) => {
-            const section = report[s.key];
+        return TEN_PART_SECTIONS.filter((s) => {
+            const section = moduleRecord[s.key];
             return section && (section.title || section.content || section.keyPoints?.length);
         });
-    }, [report]);
+    }, [moduleRecord]);
 
     if (availableSections.length === 0) {
         return (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
                 <p>正在生成报告...</p>
             </div>
@@ -151,7 +159,7 @@ export function ResearchReportView({ report, className }: ResearchReportProps) {
     return (
         <div className={cn('space-y-4', className)}>
             {availableSections.map(({ key, label, icon }) => {
-                const section = report[key];
+                const section = moduleRecord[key];
                 if (!section) return null;
 
                 return (

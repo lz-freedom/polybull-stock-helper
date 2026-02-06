@@ -11,7 +11,7 @@ import {
     Monitor,
     Gem,
     Sparkles,
-    Users
+    Users,
 } from 'lucide-react';
 import inviteFriendsBg from '@/assets/invite-friends-bg.png';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { signOut } from 'next-auth/react';
-import { useTheme } from 'next-themes';
 // Note: Assuming next-themes or similar is used, usually 'useTheme' hook. 
 // If specific theme logic is in app-sidebar, I might need to accept props or move logic here.
 // Re-reading app-sidebar.tsx, it implements manual theme logic. I will accept theme props to be safe or replicate logic?
@@ -52,7 +51,7 @@ export function SidebarFooterAuth({
     collapsed,
     onThemeChange,
     onLocaleChange,
-    currentTheme
+    currentTheme: _currentTheme,
 }: SidebarFooterAuthProps) {
     const t = useTranslations('sidebar');
 
@@ -77,18 +76,18 @@ export function SidebarFooterAuth({
         <div className="p-3 space-y-3">
             {/* Surf Waves Card - The "Upgrade" visual context -> Now Invite Friends */}
             <div
-                className="rounded-md border border-border p-0 relative overflow-hidden group hover:border-pink-200/50 transition-colors cursor-pointer h-10 flex items-center"
+                className="rounded-md border border-border p-0 relative overflow-hidden group hover:border-border/70 transition-colors cursor-pointer h-10 flex items-center"
                 style={{
                     backgroundImage: `url(${inviteFriendsBg.src})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
-                    backgroundColor: '#1E1E1E' // Fallback color
+                    backgroundColor: 'var(--card)',
                 }}
             >
                 <div className="relative z-10 flex items-center gap-2 px-3 w-full">
-                    <Users className="h-4 w-4 text-white" />
-                    <span className="font-medium text-sm text-white">{t('inviteFriends')}</span>
+                    <Users className="h-4 w-4 text-primary-foreground" />
+                    <span className="font-medium text-sm text-primary-foreground">{t('inviteFriends')}</span>
                 </div>
             </div>
 
@@ -99,7 +98,7 @@ export function SidebarFooterAuth({
 
             <div className="flex items-center gap-2 pl-1 pr-0">
                 {/* Avatar */}
-                <div className="h-8 w-8 rounded-full bg-green-700 text-white flex items-center justify-center text-xs font-medium shrink-0 shadow-sm">
+                <div className="h-8 w-8 rounded-full bg-success/10 text-primary-foreground flex items-center justify-center text-xs font-medium shrink-0 shadow-sm">
                     {userInitial}
                 </div>
 
@@ -107,7 +106,7 @@ export function SidebarFooterAuth({
                 <div className="flex-1 min-w-0 flex items-center gap-2">
                     <span className="text-sm font-semibold truncate text-foreground">{userDisplayName}</span>
                     {/* Pink Upgrade Chip */}
-                    <button className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-transparent border border-[#EC4899] hover:bg-[#EC4899]/10 shadow-sm text-[10px] font-bold text-[#EC4899] transition-colors">
+                    <button className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-transparent border border-primary hover:bg-accent shadow-sm text-[10px] font-bold text-primary transition-colors">
                         <Gem className="h-3 w-3" />
                         {t('upgrade')}
                     </button>
@@ -122,7 +121,7 @@ export function SidebarFooterAuth({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56 p-1.5" side="top">
                         {/* Upgrade */}
-                        <DropdownMenuItem className="text-pink-500 focus:text-pink-600 focus:bg-pink-50 cursor-pointer flex items-center gap-2">
+                        <DropdownMenuItem className="text-primary focus:text-primary focus:bg-accent cursor-pointer flex items-center gap-2">
                             <Sparkles className="mr-2 h-4 w-4" />
                             <span>{t('upgradePlan')}</span>
                         </DropdownMenuItem>
@@ -171,7 +170,7 @@ export function SidebarFooterAuth({
                         <DropdownMenuSeparator />
 
                         {/* Logout */}
-                        <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 cursor-pointer text-red-500 focus:text-red-600 focus:bg-red-50">
+                        <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
                             <LogOut className="h-4 w-4" />
                             <span>{t('signOut')}</span>
                         </DropdownMenuItem>

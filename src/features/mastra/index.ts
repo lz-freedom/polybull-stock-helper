@@ -2,14 +2,20 @@ import { Mastra } from '@mastra/core';
 import { PinoLogger } from '@mastra/loggers';
 
 import { getModel, MODELS } from './providers/openrouter';
-import { qaAgent } from './agents/qa-agent';
+import { instantAgent } from './agents/instant-agent';
+import { instantLiteAgent } from './agents/instant-lite-agent';
+import { rigorousAgent } from './agents/rigorous-agent';
+import { rigorousLiteAgent } from './agents/rigorous-lite-agent';
 import { consensusWorkflow, researchWorkflow } from './workflows';
 import { storage } from './storage';
 
 export const mastra = new Mastra({
     storage,
     agents: {
-        qaAgent,
+        instantAgent,
+        rigorousAgent,
+        instantLiteAgent,
+        rigorousLiteAgent,
     },
     workflows: {
         consensusWorkflow,

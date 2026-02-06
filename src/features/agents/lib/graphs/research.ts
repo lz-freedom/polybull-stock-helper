@@ -44,14 +44,14 @@ const RESEARCH_ROLES: ResearchRoleConfig[] = [
         role: 'fundamental_analyst',
         name_zh: '基本面分析师',
         description: '负责公司核心价值与商业模式分析，从整体视角评估公司基本面',
-        sections: ['core_overview', 'business_model'],
+        sections: ['business', 'revenue'],
         requiredData: ['companyInfo', 'incomeStatement', 'news'],
     },
     {
         role: 'financial_analyst',
         name_zh: '财务分析师',
         description: '专注财务报表分析，评估盈利能力、资产质量和现金流健康度',
-        sections: ['financial_quality'],
+        sections: ['financial'],
         requiredData: ['incomeStatement', 'balanceSheet', 'cashFlowStatement'],
     },
     {
@@ -65,28 +65,28 @@ const RESEARCH_ROLES: ResearchRoleConfig[] = [
         role: 'industry_expert',
         name_zh: '行业专家',
         description: '分析行业竞争格局，评估公司护城河与市场地位',
-        sections: ['competitive_advantage'],
+        sections: ['industry', 'competition'],
         requiredData: ['companyInfo', 'news', 'industryData'],
     },
     {
         role: 'governance_analyst',
         name_zh: '公司治理分析师',
         description: '评估管理层能力、治理结构和股权激励机制',
-        sections: ['governance'],
+        sections: ['management'],
         requiredData: ['companyInfo', 'insiderTransactions', 'shareholderStructure'],
     },
     {
         role: 'strategy_analyst',
         name_zh: '战略分析师',
         description: '分析公司战略方向、增长空间和行业发展趋势',
-        sections: ['future_outlook'],
+        sections: ['scenario', 'long_thesis'],
         requiredData: ['companyInfo', 'news', 'earningsCall'],
     },
     {
         role: 'risk_analyst',
         name_zh: '风险分析师',
         description: '识别和评估各类风险，包括经营风险、财务风险和行业风险',
-        sections: ['risks'],
+        sections: ['risk'],
         requiredData: ['balanceSheet', 'news', 'legalFilings'],
     },
     {
@@ -117,14 +117,17 @@ function buildPlanningPrompt(
 ): string {
     const stockInfo = extractStockInfo(snapshot);
 
-    return `Create a research plan to answer the following question about ${stockInfo.symbol} (${stockInfo.name ?? 'Unknown'}):
+    return `请为以下研究问题制定研究计划（中文输出）：
 
-"${query}"
+股票: ${stockInfo.symbol} (${stockInfo.name ?? 'Unknown'})
+问题: "${query}"
 
-Break this down into specific sub-questions that different research roles can investigate.
-Each sub-question should be answerable with the available financial data.
+要求：
+1. 拆分为可执行的子问题，适配不同研究角色。
+2. 子问题应可由现有数据回答。
+3. 输出 ResearchPlanSchema 所需字段。
 
-Available data includes: financial statements (income, balance sheet, cash flow), recent news, stock splits, dividends, and company info.`;
+可用数据包括：财务报表（损益表/资产负债表/现金流）、近期新闻、股本变动、分红、公司信息。`;
 }
 
 function buildResearchPrompt(
@@ -201,19 +204,20 @@ Limitations: ${f.limitations.join('; ')}`,
         )
         .join('\n\n');
 
-    return `Synthesize the following research findings into a comprehensive report.
+    return `请基于以下研究发现，综合输出结构化研究报告（中文输出）。
 
-Original Question: "${originalQuery}"
+原始问题: "${originalQuery}"
 
-Research Findings:
+研究发现:
 ${findingsSummary}
 
-Create a well-structured report with:
-1. Executive summary answering the original question
-2. Detailed sections covering each aspect
-3. Evidence citations for key claims
-4. Limitations and caveats
-5. Suggested follow-up questions`;
+要求输出 ResearchReportSchema 结构：
+- title
+- summary
+- modules（包含 business/revenue/industry/competition/financial/risk/management/scenario/valuation/long_thesis）
+- limitations
+- suggestedFollowUp
+- citations（如有）`;
 }
 
 async function updateStepStatus(
@@ -437,8 +441,8 @@ export async function runResearchAgent(
                 agentRunId: run.id,
                 reportType: 'research',
                 title: researchReport.title,
-                summary: researchReport.executiveSummary,
-                content: researchReport.conclusion,
+                summary: researchReport.summary,
+                content: researchReport.summary,
                 structuredData: researchReport as Record<string, unknown>,
                 sources: {
                     snapshot: snapshot.id,
@@ -448,18 +452,19 @@ export async function runResearchAgent(
             })
             .returning();
 
-        await db.insert(reportSections).values(
-            researchReport.sections.map((section, index) => ({
-                reportId: report.id,
-                sectionName: `section_${index + 1}`,
-                sectionOrder: index + 1,
-                title: section.heading,
-                content: section.content,
-                structuredData: {
-                    evidence: section.evidence,
-                } as Record<string, unknown>,
-            })),
-        );
+        const moduleEntries = Object.entries(researchReport.modules ?? {});
+        if (moduleEntries.length > 0) {
+            await db.insert(reportSections).values(
+                moduleEntries.map(([key, section], index) => ({
+                    reportId: report.id,
+                    sectionName: key,
+                    sectionOrder: index + 1,
+                    title: section.title ?? key,
+                    content: section.content ?? '',
+                    structuredData: section as Record<string, unknown>,
+                })),
+            );
+        }
 
         await updateRunStatus(
             run.id,

@@ -30,25 +30,65 @@ export default function PulsePage({ params }: PulsePageProps) {
         setAnalyses([]);
 
         try {
-            const response = await fetch('/api/agents/consensus', {
+            const response = await fetch('/api/agents/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    stockSymbol,
-                    exchangeAcronym,
+                    mode: 'consensus',
+                    messages: [
+                        {
+                            role: 'user',
+                            content: `请对 ${stockSymbol} (${exchangeAcronym}) 进行共识分析`,
+                        },
+                    ],
+                    options: {
+                        stockSymbol,
+                        exchangeAcronym,
+                    },
                 }),
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Failed to generate consensus report');
+            if (!response.ok || !response.body) {
+                const errorData = await response.text();
+                throw new Error(errorData || 'Failed to generate consensus report');
             }
 
-            const data = await response.json();
-            setReport(data.report);
-            setAnalyses(data.modelAnalyses);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.startsWith('data:')) continue;
+                    const payload = line.replace(/^data:\s*/, '');
+                    try {
+                        const parsed = JSON.parse(payload) as { type?: string; data?: any };
+                        if (parsed.type === 'data-report') {
+                            setReport(parsed.data?.report ?? null);
+                        }
+                        if (parsed.type === 'data-complete') {
+                            const result = parsed.data?.result;
+                            if (Array.isArray(result?.modelAnalyses)) {
+                                setAnalyses(result.modelAnalyses);
+                            }
+                        }
+                        if (parsed.type === 'data-error') {
+                            setError(parsed.data?.message ?? 'Failed to generate consensus report');
+                        }
+                    } catch (err) {
+                        console.warn('Failed to parse stream chunk', err);
+                    }
+                }
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred');
         } finally {
@@ -59,13 +99,13 @@ export default function PulsePage({ params }: PulsePageProps) {
     const getStanceColor = (stance: Stance) => {
         switch (stance) {
             case 'bullish':
-                return 'bg-green-100 text-green-800 hover:bg-green-100 border-green-200';
+                return 'bg-success/10 text-success hover:bg-success/10 border-success/30';
             case 'bearish':
-                return 'bg-red-100 text-red-800 hover:bg-red-100 border-red-200';
+                return 'bg-destructive/10 text-destructive hover:bg-destructive/10 border-destructive/30';
             case 'neutral':
-                return 'bg-gray-100 text-gray-800 hover:bg-gray-100 border-gray-200';
+                return 'bg-muted text-muted-foreground hover:bg-muted border-border';
             default:
-                return 'bg-gray-100 text-gray-800';
+                return 'bg-muted text-muted-foreground';
         }
     };
 
@@ -134,7 +174,7 @@ export default function PulsePage({ params }: PulsePageProps) {
             </Card>
 
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-4 flex items-center">
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-md p-4 flex items-center">
                     <AlertCircle className="h-5 w-5 mr-2" />
                     {error}
                 </div>
@@ -151,7 +191,7 @@ export default function PulsePage({ params }: PulsePageProps) {
                                         Consensus Confidence: {report.overallConfidence}%
                                     </CardDescription>
                                 </div>
-                                <Badge variant="outline" className={cn("px-4 py-1.5 text-base font-semibold", getStanceColor(report.overallStance))}>
+                                <Badge variant="outline" className={cn('px-4 py-1.5 text-base font-semibold', getStanceColor(report.overallStance))}>
                                     {getStanceIcon(report.overallStance)}
                                     {report.overallStance.toUpperCase()}
                                 </Badge>
@@ -163,7 +203,7 @@ export default function PulsePage({ params }: PulsePageProps) {
                                     <Activity className="h-4 w-4 mr-2 text-primary" />
                                     Executive Summary
                                 </h3>
-                                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                <p className="text-muted-foreground leading-relaxed">
                                     {report.overallSummary}
                                 </p>
                             </div>
@@ -174,7 +214,7 @@ export default function PulsePage({ params }: PulsePageProps) {
                                     <ul className="space-y-2">
                                         {report.consensusPoints.map((point, i) => (
                                             <li key={i} className="flex items-start gap-2 text-sm">
-                                                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                                                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
                                                 <span>{point.point}</span>
                                             </li>
                                         ))}
@@ -185,9 +225,9 @@ export default function PulsePage({ params }: PulsePageProps) {
                                     <ul className="space-y-2">
                                         {report.disagreementPoints.map((point, i) => (
                                             <li key={i} className="flex items-start gap-2 text-sm">
-                                                <AlertCircle className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
-                                                <span className="font-medium text-gray-900 dark:text-gray-100">{point.topic}:</span>
-                                                <span className="text-gray-600 dark:text-gray-400">
+                                                <AlertCircle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+                                                <span className="font-medium text-muted-foreground">{point.topic}:</span>
+                                                <span className="text-muted-foreground">
                                                     {point.positions.length} divergent views
                                                 </span>
                                             </li>
@@ -219,7 +259,7 @@ export default function PulsePage({ params }: PulsePageProps) {
                                     <CardContent className="flex-1 space-y-4 text-sm">
                                         <div>
                                             <p className="font-semibold mb-1 text-xs text-muted-foreground">KEY POINTS</p>
-                                            <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+                                            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                                                 {analysis.keyPoints.slice(0, 3).map((point, i) => (
                                                     <li key={i} className="line-clamp-2">{point}</li>
                                                 ))}
@@ -227,7 +267,7 @@ export default function PulsePage({ params }: PulsePageProps) {
                                         </div>
                                         <div>
                                             <p className="font-semibold mb-1 text-xs text-muted-foreground">RISKS</p>
-                                            <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+                                            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                                                 {analysis.risks.slice(0, 2).map((risk, i) => (
                                                     <li key={i} className="line-clamp-2">{risk}</li>
                                                 ))}

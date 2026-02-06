@@ -42,7 +42,7 @@ export default function SharePage({ params }: SharePageProps) {
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-[#F7F8FA] dark:bg-[#0F1114]">
+            <div className="flex h-screen items-center justify-center bg-background dark:bg-background">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
@@ -50,7 +50,7 @@ export default function SharePage({ params }: SharePageProps) {
 
     if (error || !content) {
         return (
-            <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#F7F8FA] dark:bg-[#0F1114]">
+            <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background dark:bg-background">
                 <p className="text-muted-foreground">{error || 'Content not found'}</p>
                 <Button asChild>
                     <Link href={`/${locale}`}>
@@ -63,7 +63,7 @@ export default function SharePage({ params }: SharePageProps) {
     }
 
     return (
-        <div className="min-h-screen bg-[#F7F8FA] dark:bg-[#0F1114]">
+        <div className="min-h-screen bg-background dark:bg-background">
             <div className="container mx-auto max-w-4xl p-6">
                 <div className="mb-6 flex items-center justify-between">
                     <h1 className="text-xl font-semibold">Shared Report</h1>

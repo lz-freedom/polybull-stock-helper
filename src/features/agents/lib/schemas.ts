@@ -24,17 +24,18 @@ export type ResearchRole = z.infer<typeof ResearchRoleEnum>;
 export const PriorityEnum = z.enum(['high', 'medium', 'low']);
 export type Priority = z.infer<typeof PriorityEnum>;
 
-/** 报告章节枚举 - 9个核心板块 */
+/** 报告章节枚举 - 10个核心板块 */
 export const ReportSectionEnum = z.enum([
-    'core_overview',          // 核心概览
-    'business_model',         // 商业模式
-    'competitive_advantage',  // 竞争优势
-    'financial_quality',      // 财务质量
-    'governance',             // 管理层治理
-    'valuation',              // 估值
-    'future_outlook',         // 未来展望
-    'risks',                  // 风险提示
-    'conclusion',             // 投资结论
+    'business',       // 业务
+    'revenue',        // 收入
+    'industry',       // 行业
+    'competition',    // 竞争
+    'financial',      // 财务
+    'risk',           // 风险
+    'management',     // 管理层
+    'scenario',       // 情景
+    'valuation',      // 估值
+    'long_thesis',    // 长期论文
 ]);
 export type ReportSection = z.infer<typeof ReportSectionEnum>;
 
@@ -81,6 +82,7 @@ export const ModelAnalysisSchema = z.object({
     risks: z.array(z.string()).describe('2-3 identified risks'),
     confidence: z.number().min(0).max(100).describe('Confidence level 0-100'),
     analysis: z.string().describe('Detailed analysis in markdown format'),
+    report: z.lazy(() => TenPartReportSchema).describe('10模块结构化分支报告'),
 });
 
 export type ModelAnalysis = z.infer<typeof ModelAnalysisSchema>;
@@ -115,6 +117,15 @@ export const ConsensusReportSchema = z.object({
     scores: ScoreSchema.describe('Quantitative scoring and recommendation'),
     actionItems: z.array(z.string()).describe('Items requiring further verification'),
     overallConfidence: z.number().min(0).max(100),
+    evidenceStrength: z
+        .array(z.object({
+            claim: z.string(),
+            strength: z.enum(['strong', 'medium', 'weak']),
+            rationale: z.string(),
+        }))
+        .optional(),
+    riskSignals: z.array(z.string()).optional(),
+    wrongSignals: z.array(z.string()).optional(),
 });
 
 export type ConsensusReport = z.infer<typeof ConsensusReportSchema>;
@@ -158,18 +169,11 @@ export type ResearchFinding = z.infer<typeof ResearchFindingSchema>;
 
 export const ResearchReportSchema = z.object({
     title: z.string(),
-    executiveSummary: z.string(),
-    sections: z.array(
-        z.object({
-            type: ReportSectionEnum.optional().describe('Standardized section type'),
-            heading: z.string(),
-            content: z.string(),
-            evidence: z.array(EvidenceSchema),
-        }),
-    ),
-    conclusion: z.string(),
-    limitations: z.array(z.string()),
-    suggestedFollowUp: z.array(z.string()),
+    summary: z.string(),
+    modules: z.record(ReportSectionEnum, z.lazy(() => SectionContentSchema)),
+    limitations: z.array(z.string()).optional(),
+    suggestedFollowUp: z.array(z.string()).optional(),
+    citations: z.array(EvidenceSchema).optional(),
 });
 
 export type ResearchReport = z.infer<typeof ResearchReportSchema>;
@@ -186,7 +190,7 @@ export const ReportBlockType = z.enum([
     'chart',
     'callout',
     'score-panel',
-    'analyst-panel'
+    'analyst-panel',
 ]);
 
 const BlockBase = z.object({
@@ -296,7 +300,7 @@ export const StreamableReportSchema = z.object({
 export type StreamableReport = z.infer<typeof StreamableReportSchema>;
 
 // ============================================================
-// 9部分报告结构 (Nine-Part Report Structure)
+// 10部分报告结构 (Ten-Part Report Structure)
 // ============================================================
 
 /** 单个章节内容模式 */
@@ -318,25 +322,19 @@ export const SectionContentSchema = z.object({
 });
 export type SectionContent = z.infer<typeof SectionContentSchema>;
 
-/** 9部分完整报告模式 */
-export const NinePartReportSchema = z.object({
-    /** 核心概览 - 一句话总结公司核心价值 */
-    core_overview: SectionContentSchema.describe('核心概览：公司核心业务与投资价值一句话总结'),
-    /** 商业模式 - 盈利模式、收入来源、客户群体 */
-    business_model: SectionContentSchema.describe('商业模式：如何赚钱、收入构成、客户画像'),
-    /** 竞争优势 - 护城河、行业地位、核心壁垒 */
-    competitive_advantage: SectionContentSchema.describe('竞争优势：护城河分析、市场地位、核心壁垒'),
-    /** 财务质量 - 财务健康度、盈利能力、现金流 */
-    financial_quality: SectionContentSchema.describe('财务质量：盈利能力、资产负债、现金流健康度'),
-    /** 管理层治理 - 管理层能力、治理结构、激励机制 */
-    governance: SectionContentSchema.describe('管理层治理：管理层背景、公司治理、股权激励'),
-    /** 估值 - 当前估值水平、安全边际、对比分析 */
-    valuation: SectionContentSchema.describe('估值分析：估值方法、安全边际、同业对比'),
-    /** 未来展望 - 增长空间、战略方向、行业趋势 */
-    future_outlook: SectionContentSchema.describe('未来展望：成长空间、战略规划、行业趋势'),
-    /** 风险提示 - 主要风险、潜在威胁、关注点 */
-    risks: SectionContentSchema.describe('风险提示：经营风险、行业风险、财务风险'),
-    /** 投资结论 - 综合评估、投资建议、目标价 */
-    conclusion: SectionContentSchema.describe('投资结论：综合评价、投资建议、合理估值区间'),
+/** 10部分完整报告模式 */
+export const TenPartReportSchema = z.object({
+    title: z.string().optional(),
+    summary: z.string().optional(),
+    business: SectionContentSchema.describe('业务：核心业务与价值主张'),
+    revenue: SectionContentSchema.describe('收入：收入结构、驱动因素与质量'),
+    industry: SectionContentSchema.describe('行业：行业格局、周期与趋势'),
+    competition: SectionContentSchema.describe('竞争：竞争格局、护城河与壁垒'),
+    financial: SectionContentSchema.describe('财务：盈利能力、现金流与资产负债'),
+    risk: SectionContentSchema.describe('风险：主要风险与潜在负面因素'),
+    management: SectionContentSchema.describe('管理层：治理结构、能力与激励'),
+    scenario: SectionContentSchema.describe('情景：牛熊情景与关键假设'),
+    valuation: SectionContentSchema.describe('估值：估值框架与安全边际'),
+    long_thesis: SectionContentSchema.describe('长期论文：长期价值与核心论点'),
 });
-export type NinePartReport = z.infer<typeof NinePartReportSchema>;
+export type TenPartReport = z.infer<typeof TenPartReportSchema>;

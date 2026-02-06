@@ -58,6 +58,68 @@ export const DATA_PART_NAMES = {
 
 export type DataPartName = (typeof DATA_PART_NAMES)[keyof typeof DATA_PART_NAMES];
 
+export type CotStepStatus = 'complete' | 'active' | 'pending';
+
+export interface CotStep {
+    id: string;
+    title: string;
+    status: CotStepStatus;
+    description?: string;
+    timestamp?: number;
+    evidence?: string[];
+    percent?: number;
+}
+
+export interface StageEventData {
+    stage?: string;
+    progress?: number;
+    message?: string;
+    timestamp?: number;
+}
+
+export interface ProgressEventData {
+    stepId?: string;
+    percent?: number;
+    message?: string;
+    timestamp?: number;
+}
+
+export interface ThinkingEventData {
+    message?: string;
+    timestamp?: number;
+}
+
+export interface ToolCallEventData {
+    toolName?: string;
+    callId?: string;
+    args?: unknown;
+    timestamp?: number;
+}
+
+export interface ToolResultEventData {
+    callId?: string;
+    result?: unknown;
+    timestamp?: number;
+}
+
+export interface StepSummaryEventData {
+    summary?: string;
+    stepId?: string;
+    timestamp?: number;
+}
+
+export interface DecisionEventData {
+    decision?: string;
+    rationale?: string;
+    timestamp?: number;
+}
+
+export interface ReportEventData {
+    report?: unknown;
+    reportId?: string | number;
+    timestamp?: number;
+}
+
 export const REPORT_TYPES = {
     CONSENSUS: 'consensus',
     RESEARCH: 'research',

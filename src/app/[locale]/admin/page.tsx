@@ -31,42 +31,42 @@ export default async function AdminPage({ params }: AdminPageProps) {
             title: t('totalUsers'),
             value: userCount?.count || 0,
             icon: Users,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-100',
+            color: 'text-info',
+            bgColor: 'bg-info/10',
         },
         {
             title: t('totalTeams'),
             value: teamCount?.count || 0,
             icon: Building2,
-            color: 'text-green-600',
-            bgColor: 'bg-green-100',
+            color: 'text-success',
+            bgColor: 'bg-success/10',
         },
         {
             title: t('activeSubscriptions'),
             value: '-',
             icon: CreditCard,
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-100',
+            color: 'text-info',
+            bgColor: 'bg-info/10',
         },
         {
             title: t('recentActivity'),
             value: recentActivity.length,
             icon: Activity,
-            color: 'text-orange-600',
-            bgColor: 'bg-orange-100',
+            color: 'text-warning',
+            bgColor: 'bg-warning/10',
         },
     ];
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-muted-foreground">{t('title')}</h1>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat) => (
                     <Card key={stat.title}>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
                                 {stat.title}
                             </CardTitle>
                             <div className={`p-2 rounded-lg ${stat.bgColor}`}>
@@ -87,7 +87,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
                 </CardHeader>
                 <CardContent>
                     {recentActivity.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">No recent activity</p>
+                        <p className="text-muted-foreground text-center py-4">No recent activity</p>
                     ) : (
                         <div className="space-y-3">
                             {recentActivity.map((activity) => (
@@ -97,11 +97,11 @@ export default async function AdminPage({ params }: AdminPageProps) {
                                 >
                                     <div>
                                         <p className="font-medium">{activity.action}</p>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-muted-foreground">
                                             User ID: {activity.userId} | Team ID: {activity.teamId}
                                         </p>
                                     </div>
-                                    <span className="text-sm text-gray-400">
+                                    <span className="text-sm text-muted-foreground">
                                         {new Date(activity.timestamp).toLocaleString()}
                                     </span>
                                 </div>

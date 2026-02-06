@@ -22,7 +22,7 @@ const openrouter = createOpenAI({
  */
 export const MODELS = {
     // 推理模型
-    MINIMAX_M2: 'minimax/minimax-m2-her',
+    MINIMAX_M2: 'minimax/minimax-m2',
     GLM_4_7: 'zhipu-ai/glm-4.7',
     SEED_1_6: 'bytedance-seed/seed-1.6',
     DEEPSEEK_V3_2: 'deepseek/deepseek-v3.2',
@@ -33,6 +33,9 @@ export const MODELS = {
 
 export type ModelId = (typeof MODELS)[keyof typeof MODELS];
 
+export const TOOL_MODEL_ID =
+    (process.env.OPENROUTER_TOOL_MODEL ?? '').trim() || MODELS.MINIMAX_M2;
+
 /**
  * 获取 Mastra 兼容的模型实例
  * @param modelId - 模型 ID
@@ -40,6 +43,14 @@ export type ModelId = (typeof MODELS)[keyof typeof MODELS];
  */
 export function getModel(modelId: ModelId = MODELS.DEFAULT) {
     return openrouter.chat(modelId);
+}
+
+/**
+ * 获取支持工具调用的模型实例
+ * 优先使用 OPENROUTER_TOOL_MODEL，否则退回默认模型
+ */
+export function getToolModel() {
+    return openrouter.chat(TOOL_MODEL_ID);
 }
 
 /**

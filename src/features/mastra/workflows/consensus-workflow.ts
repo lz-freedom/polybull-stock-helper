@@ -12,7 +12,6 @@ import {
 import {
     ConsensusReportSchema,
     ModelAnalysisSchema,
-    NinePartReportSchema,
     type ConsensusReport,
     type ModelAnalysis,
 } from '@/features/agents/lib/schemas';
@@ -512,6 +511,14 @@ export const consensusWorkflow = createWorkflow({
 
                 await emit(
                     requestContext,
+                    createEvent('step-summary', {
+                        stepId: String(init.steps.parallelAnalysisStepDbId),
+                        summary: `完成 ${validAnalyses.length} 个模型分支分析`,
+                    }),
+                );
+
+                await emit(
+                    requestContext,
                     createEvent('progress', {
                         stepId: String(init.steps.parallelAnalysisStepDbId),
                         percent: 100,
@@ -612,7 +619,9 @@ export const consensusWorkflow = createWorkflow({
                             sectionOrder: index + 1,
                             modelId: analysis.modelId,
                             title: `${analysis.modelId} Analysis`,
-                            content: analysis.analysis,
+                            content:
+                                analysis.report?.summary ??
+                                analysis.analysis,
                             stance: analysis.stance,
                             stanceSummary: analysis.stanceSummary,
                             structuredData: analysis as unknown as Record<string, unknown>,
@@ -624,6 +633,16 @@ export const consensusWorkflow = createWorkflow({
                     status: AGENT_RUN_STATUS.COMPLETED,
                     output: report,
                 });
+
+                await emit(
+                    requestContext,
+                    createEvent('report', {
+                        reportId: createdReport.id,
+                        reportType: 'consensus',
+                        report,
+                        runId: init.runDbId,
+                    }),
+                );
 
                 await emit(
                     requestContext,

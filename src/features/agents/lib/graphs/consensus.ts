@@ -30,14 +30,20 @@ import {
     extractRecentNews,
 } from '../services/facts-snapshot-service';
 
-const ANALYSIS_MODELS: ModelId[] = [MODELS.DEEPSEEK_V3_2, MODELS.QWEN3_MAX];
+const ANALYSIS_MODELS: ModelId[] = [
+    MODELS.MINIMAX_M2,
+    MODELS.GLM_4_7,
+    MODELS.SEED_1_6,
+    MODELS.DEEPSEEK_V3_2,
+    MODELS.QWEN3_MAX,
+];
 
 function buildAnalysisPrompt(snapshot: FactsSnapshot): string {
     const stockInfo = extractStockInfo(snapshot);
     const financials = extractLatestFinancials(snapshot);
     const news = extractRecentNews(snapshot, 5);
 
-    return `分析以下股票数据并提供你的投资观点。请用中文回复。
+    return `分析以下股票数据并提供你的投资观点。请用中文回复，并严格按照结构化输出要求完成。
 
 ## 股票信息
 - 代码: ${stockInfo.symbol}
@@ -58,19 +64,20 @@ function buildAnalysisPrompt(snapshot: FactsSnapshot): string {
 ## 近期新闻
 ${news.map((n, i) => `${i + 1}. ${n.title ?? '无标题'} (${n.publisher ?? '未知来源'})`).join('\n')}
 
-请按以下9个板块进行全面分析：
+请按以下10个模块进行全面分析（并写入 report 字段）：
 
-1. **核心概览**: 一句话总结公司核心业务与投资价值
-2. **商业模式**: 如何赚钱、收入构成、客户画像
-3. **竞争优势**: 护城河分析、市场地位、核心壁垒
-4. **财务质量**: 盈利能力、资产负债、现金流健康度
-5. **管理层治理**: 管理层背景、公司治理、股权激励
-6. **估值分析**: 估值方法、安全边际、同业对比
-7. **未来展望**: 成长空间、战略规划、行业趋势
-8. **风险提示**: 经营风险、行业风险、财务风险
-9. **投资结论**: 综合评价、投资建议、合理估值区间
+1. **业务**: 核心业务与价值主张
+2. **收入**: 收入结构、驱动因素与质量
+3. **行业**: 行业格局、周期与趋势
+4. **竞争**: 竞争格局、护城河与壁垒
+5. **财务**: 盈利能力、现金流与资产负债
+6. **风险**: 主要风险与潜在负面因素
+7. **管理层**: 治理结构、能力与激励
+8. **情景**: 牛熊情景与关键假设
+9. **估值**: 估值框架与安全边际
+10. **长期论文**: 长期价值与核心论点
 
-最后给出你的投资观点(看多/看空/中性)、关键支撑论点、识别的风险和置信度。`;
+最后给出你的投资观点(看多/看空/中性)、关键支撑论点、识别的风险和置信度，并补充总体分析摘要。`;
 }
 
 const ANALYSIS_SYSTEM_PROMPT = `你是一位专业的金融分析师。请客观分析提供的股票数据。
@@ -85,7 +92,8 @@ function buildSynthesisPrompt(analyses: ModelAnalysis[]): string {
 - 观点: ${a.stance} (置信度: ${a.confidence}%)
 - 摘要: ${a.stanceSummary}
 - 关键论点: ${a.keyPoints.join('; ')}
-- 风险: ${a.risks.join('; ')}`,
+- 风险: ${a.risks.join('; ')}
+- 长期论文: ${a.report?.long_thesis?.content ?? 'N/A'}`,
         )
         .join('\n\n');
 
@@ -98,6 +106,11 @@ ${analysisTexts}
 2. 模型之间存在分歧的观点（分歧）
 3. 需要进一步验证的事项
 4. 基于证据权重的整体投资观点
+
+补充：
+- 标注证据强弱（强/中/弱）及理由
+- 给出风险提示
+- 给出“我错了的信号”（哪些指标出现将推翻结论）
 
 ## 评分指南
 请对以下维度进行1-10分评分：

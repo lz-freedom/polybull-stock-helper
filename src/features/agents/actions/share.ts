@@ -23,7 +23,7 @@ export async function getSharedContent(shareId: string) {
                 return {
                     type: run.agentType as 'consensus' | 'research',
                     report: report.structuredData || { blocks: [] },
-                    runId: run.id
+                    runId: run.id,
                 };
             }
         }
@@ -40,7 +40,7 @@ export async function generateShareId(runId: number) {
     
     try {
         await db.execute(
-            sql`UPDATE agent_runs SET input = input || jsonb_build_object('shareId', ${shareId}) WHERE id = ${runId}`
+            sql`UPDATE agent_runs SET input = input || jsonb_build_object('shareId', ${shareId}) WHERE id = ${runId}`,
         );
         return { shareId };
     } catch (error) {

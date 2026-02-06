@@ -48,8 +48,8 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
         <div className="flex-1 p-8">
             <div className="max-w-6xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
-                    <p className="text-gray-600 mt-2">
+                    <h1 className="text-3xl font-bold text-muted-foreground">{t('title')}</h1>
+                    <p className="text-muted-foreground mt-2">
                         {t('welcome')}, {session.user.name || session.user.email}!
                     </p>
                 </div>
@@ -62,10 +62,10 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                                     <CardTitle className="text-sm font-medium">
                                         {card.title}
                                     </CardTitle>
-                                    <card.icon className="h-5 w-5 text-gray-400" />
+                                    <card.icon className="h-5 w-5 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <p className="text-xs text-gray-500">{card.description}</p>
+                                    <p className="text-xs text-muted-foreground">{card.description}</p>
                                 </CardContent>
                             </Card>
                         </Link>

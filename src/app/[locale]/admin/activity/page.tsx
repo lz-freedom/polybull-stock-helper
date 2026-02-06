@@ -36,7 +36,7 @@ export default async function ActivityPage({ params }: ActivityPageProps) {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">{t('activityLogs')}</h1>
+            <h1 className="text-2xl font-bold text-muted-foreground">{t('activityLogs')}</h1>
 
             <Card>
                 <CardHeader>
@@ -52,22 +52,22 @@ export default async function ActivityPage({ params }: ActivityPageProps) {
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
                                         <Badge variant="outline">{activity.action}</Badge>
-                                        <span className="text-sm text-gray-500">
+                                        <span className="text-sm text-muted-foreground">
                                             by {activity.userName || activity.userEmail || 'Unknown'}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-gray-400 mt-1">
+                                    <p className="text-xs text-muted-foreground mt-1">
                                         Team ID: {activity.teamId} | IP: {activity.ipAddress || 'N/A'}
                                     </p>
                                 </div>
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-muted-foreground">
                                     {new Date(activity.timestamp).toLocaleString()}
                                 </span>
                             </div>
                         ))}
 
                         {activities.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-muted-foreground">
                                 No activity logs
                             </div>
                         )}

@@ -17,19 +17,19 @@ interface Evidence {
     dataPoint?: string;
 }
 
-interface ResearchSection {
-    heading: string;
-    content: string;
-    evidence: Evidence[];
-}
-
 interface ResearchReport {
     title: string;
-    executiveSummary: string;
-    sections: ResearchSection[];
-    conclusion: string;
-    limitations: string[];
-    suggestedFollowUp: string[];
+    summary: string;
+    modules: Record<string, {
+        title?: string;
+        content?: string;
+        keyPoints?: string[];
+        evidence?: Evidence[];
+        confidence?: number;
+    }>;
+    limitations?: string[];
+    suggestedFollowUp?: string[];
+    citations?: Evidence[];
 }
 
 interface ResearchTask {
@@ -45,14 +45,27 @@ interface ResearchPlan {
     expectedDeliverables: string[];
 }
 
+const REPORT_MODULES = [
+    { key: 'business', label: '业务' },
+    { key: 'revenue', label: '收入' },
+    { key: 'industry', label: '行业' },
+    { key: 'competition', label: '竞争' },
+    { key: 'financial', label: '财务' },
+    { key: 'risk', label: '风险' },
+    { key: 'management', label: '管理层' },
+    { key: 'scenario', label: '情景' },
+    { key: 'valuation', label: '估值' },
+    { key: 'long_thesis', label: '长期论文' },
+] as const;
+
 function ConfidenceBadge({ confidence }: { confidence: string }) {
     return (
         <span
             className={cn(
                 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                confidence === 'high' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                confidence === 'medium' && 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-                confidence === 'low' && 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                confidence === 'high' && 'bg-success/10 text-success dark:bg-success/10 dark:text-success',
+                confidence === 'medium' && 'bg-warning/10 text-warning dark:bg-warning/10 dark:text-warning',
+                confidence === 'low' && 'bg-destructive/10 text-destructive dark:bg-destructive/10 dark:text-destructive',
             )}
         >
             {confidence}
@@ -79,23 +92,62 @@ export default function WikiPage() {
         setPlan(null);
 
         try {
-            const response = await fetch('/api/agents/research', {
+            const response = await fetch('/api/agents/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    stockSymbol: stockSymbol.toUpperCase(),
-                    exchangeAcronym: exchangeAcronym.toUpperCase(),
-                    query,
+                    mode: 'research',
+                    messages: [
+                        {
+                            role: 'user',
+                            content: query,
+                        },
+                    ],
+                    options: {
+                        stockSymbol: stockSymbol.toUpperCase(),
+                        exchangeAcronym: exchangeAcronym.toUpperCase(),
+                        query,
+                    },
                 }),
             });
 
-            const data = await response.json();
+            if (!response.ok || !response.body) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Failed to start research');
+            }
 
-            if (data.success) {
-                setReport(data.report);
-                setPlan(data.plan);
-            } else {
-                setError(data.error || 'Failed to generate research');
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.startsWith('data:')) continue;
+                    const payload = line.replace(/^data:\s*/, '');
+                    try {
+                        const parsed = JSON.parse(payload) as { type?: string; data?: any };
+                        const chunkType = parsed.type ?? '';
+                        if (chunkType === 'data-report') {
+                            setReport(parsed.data?.report ?? null);
+                        }
+                        if (chunkType === 'data-complete') {
+                            const result = parsed.data?.result;
+                            if (result?.plan) setPlan(result.plan);
+                        }
+                        if (chunkType === 'data-error') {
+                            setError(parsed.data?.message ?? 'Failed to generate research');
+                        }
+                    } catch (err) {
+                        console.warn('Failed to parse stream chunk', err);
+                    }
+                }
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
@@ -105,13 +157,13 @@ export default function WikiPage() {
     }
 
     return (
-        <div className="flex-1 p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="flex-1 p-8 bg-muted min-h-screen">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    <h1 className="text-3xl font-bold text-muted-foreground">
                         Deep Research
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    <p className="text-muted-foreground mt-2">
                         Generate comprehensive research reports with evidence-backed findings
                     </p>
                 </div>
@@ -120,7 +172,7 @@ export default function WikiPage() {
                 <Card className="mb-8">
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">
-                            <Search className="h-5 w-5 text-orange-500" />
+                            <Search className="h-5 w-5 text-warning" />
                             Research Query
                         </CardTitle>
                         <CardDescription>
@@ -161,7 +213,7 @@ export default function WikiPage() {
                         <Button
                             onClick={generateResearch}
                             disabled={isLoading || !stockSymbol || !exchangeAcronym || !query}
-                            className="w-full bg-orange-600 hover:bg-orange-700"
+                            className="w-full bg-warning/10 hover:bg-warning/10"
                         >
                             {isLoading ? (
                                 <>
@@ -180,9 +232,9 @@ export default function WikiPage() {
 
                 {/* Error Display */}
                 {error && (
-                    <Card className="mb-8 border-red-200 dark:border-red-800">
+                    <Card className="mb-8 border-destructive/30 dark:border-destructive/30">
                         <CardContent className="pt-6">
-                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                            <div className="flex items-center gap-2 text-destructive dark:text-destructive">
                                 <AlertCircle className="h-5 w-5" />
                                 <span>{error}</span>
                             </div>
@@ -197,19 +249,19 @@ export default function WikiPage() {
                             <CardTitle className="text-base">Research Plan</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            <p className="text-sm text-muted-foreground mb-3">
                                 <strong>Main Question:</strong> {plan.mainQuestion}
                             </p>
                             <div className="space-y-2">
                                 {plan.subQuestions.map((task, i) => (
                                     <div
                                         key={task.taskId}
-                                        className="flex items-start gap-2 text-sm p-2 bg-gray-50 dark:bg-gray-800 rounded"
+                                        className="flex items-start gap-2 text-sm p-2 bg-muted rounded"
                                     >
-                                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                        <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                                         <div>
                                             <span className="font-medium">{task.role}:</span>{' '}
-                                            <span className="text-gray-600 dark:text-gray-400">
+                                            <span className="text-muted-foreground">
                                                 {task.question}
                                             </span>
                                         </div>
@@ -230,105 +282,116 @@ export default function WikiPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="prose dark:prose-invert max-w-none">
-                                    <h3 className="text-lg font-semibold mb-2">Executive Summary</h3>
-                                    <p className="text-gray-700 dark:text-gray-300">
-                                        {report.executiveSummary}
+                                    <h3 className="text-lg font-semibold mb-2">Summary</h3>
+                                    <p className="text-muted-foreground">
+                                        {report.summary}
                                     </p>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Sections */}
-                        {report.sections.map((section, i) => (
-                            <Card key={i}>
-                                <CardHeader>
-                                    <CardTitle className="text-base flex items-center gap-2">
-                                        <FileText className="h-4 w-4 text-orange-500" />
-                                        {section.heading}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                                        {section.content}
-                                    </p>
-                                    {section.evidence.length > 0 && (
-                                        <div className="border-t pt-4">
-                                            <h4 className="text-sm font-medium text-gray-500 mb-2">
-                                                Supporting Evidence
-                                            </h4>
-                                            <div className="space-y-2">
-                                                {section.evidence.map((ev, j) => (
-                                                    <div
-                                                        key={j}
-                                                        className="text-sm p-2 bg-gray-50 dark:bg-gray-800 rounded"
-                                                    >
-                                                        <div className="flex items-start justify-between gap-2">
-                                                            <span>{ev.claim}</span>
-                                                            <ConfidenceBadge confidence={ev.confidence} />
-                                                        </div>
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            Source: {ev.source}
-                                                            {ev.dataPoint && ` • ${ev.dataPoint}`}
-                                                        </p>
+                        {REPORT_MODULES.map((module) => {
+                            const section = report.modules?.[module.key];
+                            if (!section) return null;
+                            const hasEvidence = Array.isArray(section.evidence) && section.evidence.length > 0;
+
+                            return (
+                                <Card key={module.key}>
+                                    <CardHeader>
+                                        <CardTitle className="text-base flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-warning" />
+                                            {section.title || module.label}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {section.keyPoints && section.keyPoints.length > 0 && (
+                                            <div className="space-y-1">
+                                                {section.keyPoints.map((point) => (
+                                                    <div key={point} className="text-sm text-muted-foreground">
+                                                        • {point}
                                                     </div>
                                                 ))}
                                             </div>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-
-                        {/* Conclusion */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Conclusion</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-gray-700 dark:text-gray-300">
-                                    {report.conclusion}
-                                </p>
-                            </CardContent>
-                        </Card>
+                                        )}
+                                        {section.content && (
+                                            <p className="text-muted-foreground whitespace-pre-line">
+                                                {section.content}
+                                            </p>
+                                        )}
+                                        {hasEvidence && (
+                                            <div className="border-t pt-4">
+                                                <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                                                    Supporting Evidence
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {section.evidence?.map((ev, j) => (
+                                                        <div
+                                                            key={`${ev.claim}-${j}`}
+                                                            className="text-sm p-2 bg-muted rounded"
+                                                        >
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <span>{ev.claim}</span>
+                                                                <ConfidenceBadge confidence={ev.confidence} />
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                Source: {ev.source}
+                                                                {ev.dataPoint && ` • ${ev.dataPoint}`}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
 
                         {/* Limitations & Follow-up */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base text-amber-600 dark:text-amber-400">
-                                        Limitations
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-2">
-                                        {report.limitations.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm">
-                                                <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
+                        {(report.limitations || report.suggestedFollowUp) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {Array.isArray(report.limitations) && report.limitations.length > 0 && (
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-base text-warning dark:text-warning">
+                                                Limitations
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ul className="space-y-2">
+                                                {report.limitations.map((item, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-sm">
+                                                        <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+                                                        <span>{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </CardContent>
+                                    </Card>
+                                )}
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base text-blue-600 dark:text-blue-400">
-                                        Suggested Follow-up
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-2">
-                                        {report.suggestedFollowUp.map((item, i) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm">
-                                                <Search className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        </div>
+                                {Array.isArray(report.suggestedFollowUp) && report.suggestedFollowUp.length > 0 && (
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-base text-info dark:text-info">
+                                                Suggested Follow-up
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ul className="space-y-2">
+                                                {report.suggestedFollowUp.map((item, i) => (
+                                                    <li key={i} className="flex items-start gap-2 text-sm">
+                                                        <Search className="h-4 w-4 text-info mt-0.5 flex-shrink-0" />
+                                                        <span>{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -337,11 +400,11 @@ export default function WikiPage() {
                     <Card>
                         <CardContent className="py-12">
                             <div className="text-center">
-                                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                <h2 className="text-xl font-semibold text-muted-foreground mb-2">
                                     Start Your Research
                                 </h2>
-                                <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                                <p className="text-muted-foreground max-w-md mx-auto">
                                     Enter a stock symbol and your research question to generate
                                     a comprehensive report with evidence-backed findings.
                                 </p>

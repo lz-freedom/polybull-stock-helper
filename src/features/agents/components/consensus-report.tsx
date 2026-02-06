@@ -21,11 +21,11 @@ interface ConsensusReportProps {
 function StanceIcon({ stance }: { stance: string }) {
     switch (stance) {
         case 'bullish':
-            return <TrendingUp className="h-4 w-4 text-green-500" />;
+            return <TrendingUp className="h-4 w-4 text-success" />;
         case 'bearish':
-            return <TrendingDown className="h-4 w-4 text-red-500" />;
+            return <TrendingDown className="h-4 w-4 text-destructive" />;
         default:
-            return <Minus className="h-4 w-4 text-gray-400" />;
+            return <Minus className="h-4 w-4 text-muted-foreground" />;
     }
 }
 
@@ -62,17 +62,17 @@ function getRecommendationLabel(recommendation: string): string {
 function getRecommendationColor(recommendation: string): string {
     switch (recommendation) {
         case 'strong_buy':
-            return 'bg-green-600 hover:bg-green-700';
+            return 'bg-success/10 hover:bg-success/10';
         case 'buy':
-            return 'bg-green-500 hover:bg-green-600';
+            return 'bg-success/10 hover:bg-success/10';
         case 'hold':
-            return 'bg-yellow-500 hover:bg-yellow-600';
+            return 'bg-warning/10 hover:bg-warning/10';
         case 'sell':
-            return 'bg-red-500 hover:bg-red-600';
+            return 'bg-destructive/10 hover:bg-destructive/10';
         case 'strong_sell':
-            return 'bg-red-600 hover:bg-red-700';
+            return 'bg-destructive/10 hover:bg-destructive/10';
         default:
-            return 'bg-gray-500 hover:bg-gray-600';
+            return 'bg-muted hover:bg-muted';
     }
 }
 
@@ -110,7 +110,7 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
         <div className={cn('space-y-6', className)}>
             {report.title && (
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <h1 className="text-2xl font-bold text-muted-foreground">
                         {report.title}
                     </h1>
                     {report.overallStance && (
@@ -131,7 +131,7 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                         <CardTitle className="text-base">执行摘要</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-gray-700 dark:text-gray-300">{report.overallSummary}</p>
+                        <p className="text-muted-foreground">{report.overallSummary}</p>
                     </CardContent>
                 </Card>
             )}
@@ -140,22 +140,22 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <CheckCircle2 className="h-5 w-5 text-success" />
                             共识观点
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
                             {report.consensusPoints.map((point) => (
-                                <div key={point.point} className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                                <div key={point.point} className="p-3 bg-success/10 dark:bg-success/10 rounded-lg">
+                                    <p className="font-medium text-muted-foreground">
                                         {point.point}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
                                         <Badge variant="outline" className="text-xs">
                                             {getAgreementLabel(point.agreementLevel)}
                                         </Badge>
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-muted-foreground">
                                             {point.supportingModels?.join(', ')}
                                         </span>
                                     </div>
@@ -170,7 +170,7 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5 text-yellow-500" />
+                            <AlertCircle className="h-5 w-5 text-warning" />
                             分歧观点
                         </CardTitle>
                     </CardHeader>
@@ -183,12 +183,12 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                                     className={cn(
                                         'w-full text-left p-3 rounded-lg border cursor-pointer transition-colors',
                                         expandedTopic === point.topic
-                                            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200'
-                                            : 'hover:bg-gray-50 dark:hover:bg-gray-800',
+                                            ? 'bg-warning/10 dark:bg-warning/10 border-warning/30'
+                                            : 'hover:bg-muted dark:hover:bg-muted',
                                     )}
                                     onClick={() => handleDisagreementClick(point.topic)}
                                 >
-                                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    <p className="font-medium text-muted-foreground">
                                         {point.topic}
                                     </p>
                                     {expandedTopic === point.topic && point.positions && (
@@ -196,12 +196,12 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                                             {point.positions.map((pos) => (
                                                 <div
                                                     key={`${pos.stance}-${pos.rationale.slice(0, 20)}`}
-                                                    className="flex items-start gap-2 p-2 bg-white dark:bg-gray-900 rounded"
+                                                    className="flex items-start gap-2 p-2 bg-card rounded"
                                                 >
                                                     <StanceIcon stance={pos.stance} />
                                                     <div>
                                                         <p className="text-sm">{pos.rationale}</p>
-                                                        <p className="text-xs text-gray-500 mt-1">
+                                                        <p className="text-xs text-muted-foreground mt-1">
                                                             {pos.models?.join(', ')}
                                                         </p>
                                                     </div>
@@ -216,6 +216,66 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                 </Card>
             )}
 
+            {report.evidenceStrength && report.evidenceStrength.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">证据强弱</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {report.evidenceStrength.map((item, index) => (
+                                <div
+                                    key={`${item.claim}-${index}`}
+                                    className="rounded-lg border border-border bg-muted p-3"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">
+                                            {item.strength}
+                                        </Badge>
+                                        <span className="text-sm font-medium text-muted-foreground">
+                                            {item.claim}
+                                        </span>
+                                    </div>
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                        {item.rationale}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {report.riskSignals && report.riskSignals.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">风险提示</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                            {report.riskSignals.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+            )}
+
+            {report.wrongSignals && report.wrongSignals.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">我错了的信号</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                            {report.wrongSignals.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+            )}
+
             {report.scores && (
                 <Card>
                     <CardHeader>
@@ -224,16 +284,16 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                     <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {report.scores.dimension_details?.map((dim) => (
-                                <div key={dim.dimension} className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded">
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{dim.dimension}</p>
-                                    <p className="text-2xl font-bold text-orange-600">{dim.score}</p>
-                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{dim.reasoning}</p>
+                                <div key={dim.dimension} className="text-center p-3 bg-muted rounded">
+                                    <p className="text-sm text-muted-foreground">{dim.dimension}</p>
+                                    <p className="text-2xl font-bold text-warning">{dim.score}</p>
+                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{dim.reasoning}</p>
                                 </div>
                             ))}
                         </div>
                         {report.scores.final_verdict && (
-                            <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center">
-                                <p className="text-3xl font-bold text-orange-600">
+                            <div className="mt-4 p-4 bg-warning/10 dark:bg-warning/10 rounded-lg text-center">
+                                <p className="text-3xl font-bold text-warning">
                                     {report.scores.final_verdict.score}/10
                                 </p>
                                 <Badge 
@@ -241,7 +301,7 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                                 >
                                     {getRecommendationLabel(report.scores.final_verdict.recommendation)}
                                 </Badge>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                <p className="text-sm text-muted-foreground mt-2">
                                     置信度: {report.scores.final_verdict.confidence}%
                                 </p>
                             </div>
@@ -258,7 +318,7 @@ export function ConsensusReportView({ report, className }: ConsensusReportProps)
                     <CardContent>
                         <ul className="list-disc list-inside space-y-1">
                             {report.actionItems.map((item) => (
-                                <li key={item} className="text-sm text-gray-600 dark:text-gray-400">
+                                <li key={item} className="text-sm text-muted-foreground">
                                     {item}
                                 </li>
                             ))}

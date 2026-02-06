@@ -172,6 +172,58 @@ export const ThinkingEventSchema = z.object({
 export type ThinkingEvent = z.infer<typeof ThinkingEventSchema>;
 
 /**
+ * 轮次事件 - 深度研究多轮讨论
+ */
+export const RoundEventSchema = z.object({
+    type: z.literal('round'),
+    round: z.number().int().min(0),
+    totalRounds: z.number().int().min(1).optional(),
+    speaker: z.string().optional(),
+    agenda: z.string().optional(),
+    timestamp: z.number(),
+});
+
+export type RoundEvent = z.infer<typeof RoundEventSchema>;
+
+/**
+ * 步骤摘要事件 - 替代 CoT 的可读总结
+ */
+export const StepSummaryEventSchema = z.object({
+    type: z.literal('step-summary'),
+    stepId: z.string().optional(),
+    summary: z.string(),
+    timestamp: z.number(),
+});
+
+export type StepSummaryEvent = z.infer<typeof StepSummaryEventSchema>;
+
+/**
+ * 决策事件 - 记录关键决策与理由
+ */
+export const DecisionEventSchema = z.object({
+    type: z.literal('decision'),
+    decision: z.string(),
+    rationale: z.string().optional(),
+    timestamp: z.number(),
+});
+
+export type DecisionEvent = z.infer<typeof DecisionEventSchema>;
+
+/**
+ * 报告事件 - 报告产物
+ */
+export const ReportEventSchema = z.object({
+    type: z.literal('report'),
+    reportId: z.union([z.string(), z.number()]).optional(),
+    reportType: z.string().optional(),
+    report: z.unknown().optional(),
+    runId: z.number().int().optional(),
+    timestamp: z.number(),
+});
+
+export type ReportEvent = z.infer<typeof ReportEventSchema>;
+
+/**
  * 统一事件类型
  */
 export const WorkflowEventSchema = z.discriminatedUnion('type', [
@@ -187,6 +239,10 @@ export const WorkflowEventSchema = z.discriminatedUnion('type', [
     ErrorEventSchema,
     CompleteEventSchema,
     ThinkingEventSchema,
+    RoundEventSchema,
+    StepSummaryEventSchema,
+    DecisionEventSchema,
+    ReportEventSchema,
 ]);
 
 export type WorkflowEvent = z.infer<typeof WorkflowEventSchema>;

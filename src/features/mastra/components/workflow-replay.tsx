@@ -85,7 +85,9 @@ export function WorkflowReplay({ className }: WorkflowReplayProps) {
         setIsPlaying(false);
         setPlayIndex(0);
         try {
-            const response = await fetch(`/api/mastra/workflows/${workflowType}/events?runId=${runId.trim()}`);
+            const response = await fetch(
+                `/api/agents/chat?action=get_events&run_id=${runId.trim()}&mode=${workflowType}`,
+            );
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
                 throw new Error(data.error || 'Failed to load events');
@@ -174,7 +176,7 @@ export function WorkflowReplay({ className }: WorkflowReplayProps) {
                     </div>
 
                     {error && (
-                        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                             {error}
                         </div>
                     )}

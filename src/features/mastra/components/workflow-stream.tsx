@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { DataMessagePart } from '@assistant-ui/react';
-import { WorkflowEvent, parseEvent } from '../events/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -18,7 +17,7 @@ import {
     XCircle, 
     Brain, 
     FileText,
-    Activity
+    Activity,
 } from 'lucide-react';
 
 interface WorkflowStreamProps {
@@ -31,18 +30,10 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
     const [researchQuery, setResearchQuery] = useState('');
     const [workflowType, setWorkflowType] = useState<'research' | 'consensus'>('research');
     const [isRunning, setIsRunning] = useState(false);
-    const [events, setEvents] = useState<WorkflowEvent[]>([]);
+    const [events, setEvents] = useState<DataMessagePart[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [finalResult, setFinalResult] = useState<unknown | null>(null);
-    const dataParts = useMemo(
-        () =>
-            events.map((event) => ({
-                type: 'data' as const,
-                name: event.type,
-                data: event,
-            })) as DataMessagePart[],
-        [events],
-    );
+    const dataParts = useMemo(() => events, [events]);
     
     const streamEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -69,25 +60,26 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
         abortControllerRef.current = abortController;
 
         try {
-            const startRes = await fetch(`/api/mastra/workflows/${workflowType}/start`, {
+            const streamRes = await fetch('/api/agents/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    stockSymbol,
-                    exchangeAcronym,
-                    ...(workflowType === 'research' ? { query: researchQuery } : {}),
+                    mode: workflowType === 'research' ? 'research' : 'consensus',
+                    messages: [
+                        {
+                            role: 'user',
+                            content:
+                                workflowType === 'research'
+                                    ? researchQuery
+                                    : `请对 ${stockSymbol} (${exchangeAcronym}) 做共识分析`,
+                        },
+                    ],
+                    options: {
+                        stockSymbol,
+                        exchangeAcronym,
+                        ...(workflowType === 'research' ? { query: researchQuery } : {}),
+                    },
                 }),
-                signal: abortController.signal,
-            });
-
-            if (!startRes.ok) {
-                const errorData = await startRes.json();
-                throw new Error(errorData.error || 'Failed to start workflow');
-            }
-
-            const { runId } = await startRes.json();
-
-            const streamRes = await fetch(`/api/mastra/workflows/${workflowType}/stream?runId=${runId}`, {
                 signal: abortController.signal,
             });
 
@@ -110,17 +102,35 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
 
                 for (const line of lines) {
                     if (!line.trim()) continue;
-                    const event = parseEvent(line);
-                    if (event) {
-                        setEvents(prev => [...prev, event]);
-                        
-                        if (event.type === 'complete') {
-                            setFinalResult(event.result);
-                            setIsRunning(false);
-                        } else if (event.type === 'error') {
-                            setError(event.message);
-                            setIsRunning(false);
+                    if (!line.startsWith('data:')) continue;
+                    const payload = line.replace(/^data:\s*/, '');
+                    try {
+                        const parsed = JSON.parse(payload) as { type?: string; data?: unknown };
+                        const chunkType = parsed.type ?? '';
+                        if (chunkType.startsWith('data-')) {
+                            const name = chunkType.replace('data-', '');
+                            setEvents((prev) => [
+                                ...prev,
+                                {
+                                    type: 'data',
+                                    name,
+                                    data: parsed.data ?? {},
+                                },
+                            ]);
+
+                            if (name === 'complete') {
+                                const complete = parsed.data as { result?: unknown } | undefined;
+                                setFinalResult(complete?.result ?? null);
+                                setIsRunning(false);
+                            }
+                            if (name === 'error') {
+                                const err = parsed.data as { message?: string } | undefined;
+                                setError(err?.message ?? 'Unknown error');
+                                setIsRunning(false);
+                            }
                         }
+                    } catch (err) {
+                        console.warn('Failed to parse stream chunk', err);
                     }
                 }
             }
@@ -239,7 +249,7 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
                     <Card className="flex-1 overflow-hidden flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <CheckCircle className="h-5 w-5 text-green-500" />
+                                <CheckCircle className="h-5 w-5 text-success" />
                                 Final Report
                             </CardTitle>
                         </CardHeader>
@@ -260,20 +270,20 @@ export function WorkflowStream({ className }: WorkflowStreamProps) {
             </div>
 
             <Card className="flex flex-col overflow-hidden h-full">
-                        <CardHeader className="pb-3 border-b bg-muted">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-base">
-                                    <Brain className="h-5 w-5 text-orange-500" />
-                                    Agent Thought Process
-                                </CardTitle>
-                                {isRunning && (
-                                    <Badge variant="outline" className="animate-pulse text-orange-500 border-orange-200 bg-orange-50">
-                                        Live
-                                    </Badge>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto p-0 bg-slate-50 dark:bg-slate-950">
+                <CardHeader className="pb-3 border-b bg-muted">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Brain className="h-5 w-5 text-warning" />
+                            Agent Thought Process
+                        </CardTitle>
+                        {isRunning && (
+                            <Badge variant="outline" className="animate-pulse text-warning border-warning/30 bg-warning/10">
+                                Live
+                            </Badge>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto p-0 bg-muted dark:bg-card">
                     <div className="p-4 space-y-4">
                         {events.length === 0 && (
                             <div className="text-center py-12 text-muted-foreground">

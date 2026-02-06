@@ -49,22 +49,22 @@ function getStepLabel(stepName: string): string {
 // 状态图标组件
 function StatusIcon({ status, isThinking }: { status: string; isThinking?: boolean }) {
     if (isThinking) {
-        return <Brain className="h-5 w-5 text-purple-500 animate-pulse" />;
+        return <Brain className="h-5 w-5 text-info animate-pulse" />;
     }
 
     switch (status) {
         case 'completed':
-            return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+            return <CheckCircle2 className="h-5 w-5 text-success" />;
         case 'running':
-            return <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />;
+            return <Loader2 className="h-5 w-5 text-info animate-spin" />;
         case 'failed':
-            return <XCircle className="h-5 w-5 text-red-500" />;
+            return <XCircle className="h-5 w-5 text-destructive" />;
         case 'skipped':
-            return <Circle className="h-5 w-5 text-gray-400" />;
+            return <Circle className="h-5 w-5 text-muted-foreground" />;
         case 'thinking':
-            return <Brain className="h-5 w-5 text-purple-500 animate-pulse" />;
+            return <Brain className="h-5 w-5 text-info animate-pulse" />;
         default:
-            return <Clock className="h-5 w-5 text-gray-300" />;
+            return <Clock className="h-5 w-5 text-muted-foreground" />;
     }
 }
 
@@ -73,9 +73,9 @@ function ThinkingIndicator({ message }: { message?: string }) {
     if (!message) return null;
 
     return (
-        <div className="mt-2 flex items-start gap-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md">
-            <Sparkles className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-purple-700 dark:text-purple-300 italic">
+        <div className="mt-2 flex items-start gap-2 p-2 bg-info/10 dark:bg-info/10 rounded-md">
+            <Sparkles className="h-4 w-4 text-info shrink-0 mt-0.5" />
+            <p className="text-xs text-info dark:text-info italic">
                 {message}
             </p>
         </div>
@@ -96,10 +96,7 @@ export function AgentRunTimeline({
 
     const fetchStatus = useCallback(async () => {
         try {
-            const endpoint =
-                agentType === 'research'
-                    ? `/api/agents/research?runId=${runId}`
-                    : `/api/agents/consensus?runId=${runId}`;
+            const endpoint = `/api/agents/chat?action=get_run_status&run_id=${runId}&mode=${agentType}`;
 
             const response = await fetch(endpoint);
             const data = await response.json();
@@ -146,8 +143,6 @@ export function AgentRunTimeline({
     }, [runId, agentType, onComplete]);
 
     useEffect(() => {
-        let intervalId: NodeJS.Timeout;
-
         const poll = async () => {
             const isDone = await fetchStatus();
             if (isDone) {
@@ -156,7 +151,7 @@ export function AgentRunTimeline({
         };
 
         poll();
-        intervalId = setInterval(poll, 2000);
+        const intervalId: NodeJS.Timeout = setInterval(poll, 2000);
 
         return () => clearInterval(intervalId);
     }, [fetchStatus]);
@@ -169,20 +164,20 @@ export function AgentRunTimeline({
         <div className={cn('space-y-4', className)}>
             {/* 进度头部 */}
             <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-gray-700 dark:text-gray-300">
+                <span className="font-medium text-muted-foreground">
                     分析进度
                 </span>
-                <span className="text-gray-500">
+                <span className="text-muted-foreground">
                     {completedSteps}/{totalSteps} 步骤
                 </span>
             </div>
 
             {/* 进度条 */}
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                     className={cn(
                         'h-full transition-all duration-500',
-                        runStatus === 'failed' ? 'bg-red-500' : 'bg-blue-500',
+                        runStatus === 'failed' ? 'bg-destructive/10' : 'bg-info/10',
                     )}
                     style={{ width: `${progress}%` }}
                 />
@@ -190,13 +185,13 @@ export function AgentRunTimeline({
 
             {/* 全局思考状态显示 */}
             {currentThinking && runStatus === 'running' && (
-                <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <Brain className="h-5 w-5 text-purple-500 animate-pulse shrink-0" />
+                <div className="flex items-center gap-3 p-3 bg-info/10 dark:bg-info/10 rounded-lg border border-info/30 dark:border-info/30">
+                    <Brain className="h-5 w-5 text-info animate-pulse shrink-0" />
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                        <p className="text-sm font-medium text-info dark:text-info">
                             思考中...
                         </p>
-                        <p className="text-xs text-purple-700 dark:text-purple-300 truncate">
+                        <p className="text-xs text-info dark:text-info truncate">
                             {currentThinking}
                         </p>
                     </div>
@@ -214,24 +209,24 @@ export function AgentRunTimeline({
                             className={cn(
                                 'flex items-start gap-3 p-3 rounded-lg transition-colors',
                                 step.status === 'running' && !isThinking &&
-                                    'bg-blue-50 dark:bg-blue-900/20',
+                                    'bg-info/10 dark:bg-info/10',
                                 step.status === 'running' && isThinking &&
-                                    'bg-purple-50 dark:bg-purple-900/20',
+                                    'bg-info/10 dark:bg-info/10',
                                 step.status === 'completed' &&
-                                    'bg-green-50 dark:bg-green-900/20',
+                                    'bg-success/10 dark:bg-success/10',
                                 step.status === 'failed' &&
-                                    'bg-red-50 dark:bg-red-900/20',
+                                    'bg-destructive/10 dark:bg-destructive/10',
                             )}
                         >
                             <div className="flex-shrink-0 mt-0.5">
                                 <StatusIcon status={step.status} isThinking={!!isThinking} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <p className="text-sm font-medium text-muted-foreground">
                                     {getStepLabel(step.stepName)}
                                 </p>
                                 {step.startedAt && (
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         {step.completedAt
                                             ? `完成耗时 ${Math.round((new Date(step.completedAt).getTime() - new Date(step.startedAt).getTime()) / 1000)}s`
                                             : '进行中...'}
@@ -240,7 +235,7 @@ export function AgentRunTimeline({
                                 {/* Phase 2: 显示步骤级别的思考消息 */}
                                 <ThinkingIndicator message={step.thinkingMessage} />
                             </div>
-                            <div className="flex-shrink-0 text-xs text-gray-400">
+                            <div className="flex-shrink-0 text-xs text-muted-foreground">
                                 步骤 {index + 1}
                             </div>
                         </div>
@@ -250,8 +245,8 @@ export function AgentRunTimeline({
 
             {/* 错误信息 */}
             {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                    <p className="text-sm text-red-700 dark:text-red-300">
+                <div className="p-3 bg-destructive/10 dark:bg-destructive/10 rounded-lg">
+                    <p className="text-sm text-destructive dark:text-destructive">
                         错误: {error}
                     </p>
                 </div>
@@ -259,8 +254,8 @@ export function AgentRunTimeline({
 
             {/* 完成状态 */}
             {runStatus === 'completed' && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                <div className="p-3 bg-success/10 dark:bg-success/10 rounded-lg">
+                    <p className="text-sm text-success dark:text-success font-medium">
                         ✓ 分析完成
                     </p>
                 </div>

@@ -102,7 +102,7 @@ export function usePopupLogin(options: UsePopupLoginOptions = {}): UsePopupLogin
         popupRef.current = window.open(
             signInUrl,
             'oauth-popup',
-            `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+            `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`,
         );
 
         if (!popupRef.current) {

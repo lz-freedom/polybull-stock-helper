@@ -6,7 +6,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
 
 export interface FinancialMetric {
     label: string;
@@ -21,10 +21,10 @@ interface FinancialsCardProps {
 
 export function FinancialsCard({ symbol, metrics }: FinancialsCardProps) {
     return (
-        <Card className="w-full max-w-md bg-card/50 backdrop-blur-sm border-muted">
+        <Card className="w-full max-w-full border border-border bg-card text-card-foreground shadow-sm">
             <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold">
-                    Key Financials: {symbol}
+                    关键财务数据 · {symbol}
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -32,10 +32,10 @@ export function FinancialsCard({ symbol, metrics }: FinancialsCardProps) {
                     <TableBody>
                         {metrics.map((metric, i) => (
                             <TableRow key={i} className="hover:bg-transparent">
-                                <TableCell className="font-medium py-2 text-muted-foreground text-xs">
+                                <TableCell className="py-2 text-xs font-medium text-muted-foreground">
                                     {metric.label}
                                 </TableCell>
-                                <TableCell className="text-right py-2 font-mono text-sm">
+                                <TableCell className="py-2 text-right font-mono text-sm text-foreground">
                                     {typeof metric.value === 'number'
                                         ? metric.value.toLocaleString()
                                         : metric.value}

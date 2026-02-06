@@ -5,15 +5,11 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
     BarChart3,
-    Bot,
     ChevronDown,
     FileText,
     Loader2,
     MessageSquare,
-    Square,
     Search,
-    Send,
-    Sparkles,
     User as UserIcon,
 } from 'lucide-react';
 import { useChat } from '@ai-sdk/react';
@@ -27,7 +23,6 @@ import {
     useAuiState,
     type DataMessagePart,
     type TextMessagePartProps,
-    type ToolCallMessagePartProps,
 } from '@assistant-ui/react';
 import { AssistantChatTransport, useAISDKRuntime } from '@assistant-ui/react-ai-sdk';
 
@@ -36,8 +31,21 @@ import { StockPriceCard } from '@/components/chat-cards/stock-price-card';
 import { NewsCard } from '@/components/chat-cards/news-card';
 import { FinancialsCard } from '@/components/chat-cards/financials-card';
 import { DataPartList } from '@/components/assistant-ui/data-parts';
-import { ToolFallback } from '@/components/assistant-ui/tool-fallback';
+import { MarkdownText } from '@/components/assistant-ui/markdown-text';
+import { Message, MessageContent } from '@/components/ai-elements/message';
+import {
+    PromptInputBody,
+    PromptInputFooter,
+    PromptInputStop,
+    PromptInputSubmit,
+    PromptInputTools,
+} from '@/components/ai-elements/prompt-input';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ReportViewer } from '@/features/agents/components/report-viewer';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     CHAT_MODE_OPTIONS,
     CHAT_MODES,
@@ -94,6 +102,11 @@ type QuotaInfo = {
     periodKey: string;
 };
 
+type AnyMessagePart = {
+    type?: string;
+    [key: string]: unknown;
+};
+
 const MODE_ICONS = {
     [CHAT_MODES.INSTANT]: MessageSquare,
     [CHAT_MODES.RIGOROUS]: Search,
@@ -105,6 +118,55 @@ const MODE_OPTIONS = CHAT_MODE_OPTIONS.map((option) => ({
     ...option,
     icon: MODE_ICONS[option.id] ?? MessageSquare,
 }));
+
+const JSON_SUMMARY_KEYS: Array<[string, string]> = [
+    ['title', '标题'],
+    ['summary', '摘要'],
+    ['overallSummary', '总览'],
+    ['decision', '结论'],
+    ['rationale', '依据'],
+    ['stage', '阶段'],
+    ['stepId', '步骤'],
+    ['reportType', '报告类型'],
+];
+
+const EMPTY_PARTS: readonly AnyMessagePart[] = Object.freeze([]) as readonly AnyMessagePart[];
+
+function tryParseJsonSummary(text: string): Array<{ label: string; value: string }> | null {
+    const trimmed = text.trim();
+    if (!(trimmed.startsWith('{') || trimmed.startsWith('['))) return null;
+    try {
+        const parsed = JSON.parse(trimmed);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+        const items: Array<{ label: string; value: string }> = [];
+        const labelMap = new Map(JSON_SUMMARY_KEYS);
+        JSON_SUMMARY_KEYS.forEach(([key, label]) => {
+            const value = (parsed as Record<string, unknown>)[key];
+            if (value === null || value === undefined) return;
+            if (typeof value === 'string' && value.trim()) {
+                items.push({ label, value: value.trim() });
+                return;
+            }
+            if (typeof value === 'number' || typeof value === 'boolean') {
+                items.push({ label, value: String(value) });
+            }
+        });
+        if (items.length > 0) return items;
+        const fallbackEntries = Object.entries(parsed as Record<string, unknown>)
+            .filter(([, value]) => typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+            .slice(0, 8);
+        if (fallbackEntries.length === 0) return null;
+        fallbackEntries.forEach(([key, value]) => {
+            items.push({
+                label: labelMap.get(key) ?? key,
+                value: typeof value === 'string' ? value.trim() : String(value),
+            });
+        });
+        return items.length > 0 ? items : null;
+    } catch {
+        return null;
+    }
+}
 
 function resolveMode(value: string | null): ChatMode {
     if (!value) return CHAT_MODES.INSTANT;
@@ -125,105 +187,411 @@ function parseStoredMessage(content: string) {
     return null;
 }
 
+const TEN_PART_KEYS = [
+    'business',
+    'revenue',
+    'industry',
+    'competition',
+    'financial',
+    'risk',
+    'management',
+    'scenario',
+    'valuation',
+    'long_thesis',
+] as const;
+
+function buildReportContext(
+    reportData?: {
+        report?: unknown;
+        reportType?: 'consensus' | 'research';
+    },
+): string | null {
+    if (!reportData?.report) return null;
+    const report = reportData.report as Record<string, any>;
+    const lines: string[] = [];
+    const bulletItems: string[] = [];
+    const maxItems = 10;
+
+    if (reportData.reportType === 'research') {
+        const summary = typeof report.summary === 'string' ? report.summary : undefined;
+        if (summary) lines.push(`报告摘要：${summary}`);
+
+        const modules =
+            report.modules && typeof report.modules === 'object' ? report.modules : report;
+        for (const key of TEN_PART_KEYS) {
+            const section = modules?.[key];
+            if (!section || !Array.isArray(section.keyPoints)) continue;
+            for (const point of section.keyPoints) {
+                if (typeof point !== 'string' || !point.trim()) continue;
+                bulletItems.push(point.trim());
+                if (bulletItems.length >= maxItems) break;
+            }
+            if (bulletItems.length >= maxItems) break;
+        }
+        if (bulletItems.length > 0) {
+            lines.push(`关键要点：${bulletItems.map((item) => `- ${item}`).join('\n')}`);
+        }
+    } else {
+        const summary =
+            typeof report.overallSummary === 'string'
+                ? report.overallSummary
+                : typeof report.summary === 'string'
+                    ? report.summary
+                    : undefined;
+        if (summary) lines.push(`共识摘要：${summary}`);
+
+        if (Array.isArray(report.consensusPoints)) {
+            for (const point of report.consensusPoints) {
+                if (typeof point?.point === 'string' && point.point.trim()) {
+                    bulletItems.push(point.point.trim());
+                }
+                if (bulletItems.length >= maxItems) break;
+            }
+        }
+
+        if (bulletItems.length < maxItems && Array.isArray(report.disagreementPoints)) {
+            for (const point of report.disagreementPoints) {
+                if (typeof point?.topic === 'string' && point.topic.trim()) {
+                    bulletItems.push(`分歧：${point.topic.trim()}`);
+                }
+                if (bulletItems.length >= maxItems) break;
+            }
+        }
+
+        if (bulletItems.length > 0) {
+            lines.push(`关键要点：${bulletItems.map((item) => `- ${item}`).join('\n')}`);
+        }
+    }
+
+    const text = lines.join('\n');
+    if (!text.trim()) return null;
+    return text.length > 1600 ? `${text.slice(0, 1600)}...` : text;
+}
+
+type ToolStatusType = 'running' | 'complete' | 'error' | 'incomplete' | 'requires-action' | 'ready';
+
 function ToolPlaceholder({
     label,
-    status,
+    statusType,
 }: {
     label: string;
-    status?: ToolCallMessagePartProps['status'];
+    statusType?: ToolStatusType;
 }) {
-    const stateLabel = status?.type === 'running'
+    const labelMap: Record<string, string> = {
+        displayStockPrice: '股价卡片',
+        displayNews: '新闻卡片',
+        displayFinancials: '财务卡片',
+    };
+    const displayLabel = labelMap[label] ?? label;
+    const stateLabel = statusType === 'running'
         ? '执行中'
-        : status?.type === 'incomplete'
-          ? '未完成'
-          : status?.type === 'requires-action'
-            ? '需要确认'
-            : '准备中';
+        : statusType === 'incomplete'
+            ? '未完成'
+            : statusType === 'requires-action'
+                ? '需要确认'
+                : statusType === 'complete'
+                    ? '已完成'
+                    : statusType === 'error'
+                        ? '失败'
+                        : '准备中';
 
     return (
-        <div className="rounded-2xl border border-[#d0d7eb] bg-white px-3 py-3 text-xs text-[#475569]">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#94a3b8]">
-                <Loader2 className="h-3 w-3 animate-spin text-sky-500" />
-                <span>{label}</span>
-                <span className="ml-auto text-[10px] text-[#0f172a]">{stateLabel}</span>
-            </div>
-        </div>
+        <Card className="border-border bg-muted/40">
+            <CardContent className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+                {statusType === 'running' ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-info" />
+                ) : null}
+                <span className="font-medium text-foreground">{displayLabel}</span>
+                <Badge variant="secondary" className="ml-auto text-[11px]">
+                    {stateLabel}
+                </Badge>
+            </CardContent>
+        </Card>
     );
 }
 
 function StockPriceToolPart({
     result,
     args,
-    status,
-}: ToolCallMessagePartProps<DisplayStockPricePayload, DisplayStockPricePayload>) {
+    statusType,
+}: {
+    result?: DisplayStockPricePayload;
+    args?: DisplayStockPricePayload;
+    statusType?: ToolStatusType;
+}) {
     const payload = result ?? args;
     if (!payload || typeof payload.price !== 'number') {
-        return <ToolPlaceholder label="displayStockPrice" status={status} />;
+        return (
+            <Message from="assistant">
+                <MessageContent
+                    data-from="assistant"
+                    className="border-0 bg-transparent p-0 shadow-none"
+                >
+                    <ToolPlaceholder label="displayStockPrice" statusType={statusType} />
+                </MessageContent>
+            </Message>
+        );
     }
 
-    return <StockPriceCard {...payload} />;
+    return (
+        <Message from="assistant">
+            <MessageContent
+                data-from="assistant"
+                className="border-0 bg-transparent p-0 shadow-none"
+            >
+                <StockPriceCard {...payload} />
+            </MessageContent>
+        </Message>
+    );
 }
 
 function NewsToolPart({
     result,
     args,
-    status,
-}: ToolCallMessagePartProps<DisplayNewsPayload, DisplayNewsPayload>) {
+    statusType,
+}: {
+    result?: DisplayNewsPayload;
+    args?: DisplayNewsPayload;
+    statusType?: ToolStatusType;
+}) {
     const payload = result ?? args;
     if (!payload || !Array.isArray(payload.news)) {
-        return <ToolPlaceholder label="displayNews" status={status} />;
+        return (
+            <Message from="assistant">
+                <MessageContent
+                    data-from="assistant"
+                    className="border-0 bg-transparent p-0 shadow-none"
+                >
+                    <ToolPlaceholder label="displayNews" statusType={statusType} />
+                </MessageContent>
+            </Message>
+        );
     }
 
-    return <NewsCard symbol={payload.symbol} news={payload.news} />;
+    return (
+        <Message from="assistant">
+            <MessageContent
+                data-from="assistant"
+                className="border-0 bg-transparent p-0 shadow-none"
+            >
+                <NewsCard symbol={payload.symbol} news={payload.news} />
+            </MessageContent>
+        </Message>
+    );
 }
 
 function FinancialsToolPart({
     result,
     args,
-    status,
-}: ToolCallMessagePartProps<DisplayFinancialsPayload, DisplayFinancialsPayload>) {
+    statusType,
+}: {
+    result?: DisplayFinancialsPayload;
+    args?: DisplayFinancialsPayload;
+    statusType?: ToolStatusType;
+}) {
     const payload = result ?? args;
     if (!payload || !Array.isArray(payload.metrics)) {
-        return <ToolPlaceholder label="displayFinancials" status={status} />;
+        return (
+            <Message from="assistant">
+                <MessageContent
+                    data-from="assistant"
+                    className="border-0 bg-transparent p-0 shadow-none"
+                >
+                    <ToolPlaceholder label="displayFinancials" statusType={statusType} />
+                </MessageContent>
+            </Message>
+        );
     }
 
-    return <FinancialsCard symbol={payload.symbol} metrics={payload.metrics} />;
+    return (
+        <Message from="assistant">
+            <MessageContent
+                data-from="assistant"
+                className="border-0 bg-transparent p-0 shadow-none"
+            >
+                <FinancialsCard symbol={payload.symbol} metrics={payload.metrics} />
+            </MessageContent>
+        </Message>
+    );
 }
 
 function MessageDataParts() {
-    const messageContent = useAuiState(({ message }) => message.content);
+    // useAuiState selector 必须返回可缓存引用，禁止在 selector 中创建新数组/对象。
+    const messageContent = useAuiState(({ message }) =>
+        Array.isArray(message.content) ? (message.content as AnyMessagePart[]) : EMPTY_PARTS,
+    );
     const dataParts = useMemo(
-        () => messageContent.filter((part) => part.type === 'data') as DataMessagePart[],
+        () =>
+            messageContent.filter(
+                (part) => typeof part?.type === 'string' && part.type.startsWith('data-'),
+            ) as DataMessagePart[],
         [messageContent],
     );
 
     if (dataParts.length === 0) return null;
 
-    return <DataPartList parts={dataParts} className="mt-3" />;
-}
-
-function UserTextPart({ text }: TextMessagePartProps) {
     return (
-        <div className="rounded-2xl border border-[#e2e8f0] bg-[#eef2ff] px-4 py-2 text-sm font-semibold text-[#0f172a] shadow-sm">
-            <p className="whitespace-pre-wrap">{text}</p>
+        <div className="mt-4 w-full max-w-[var(--thread-max-width)]">
+            <DataPartList parts={dataParts} />
         </div>
     );
 }
 
-function AssistantTextPart({ text }: TextMessagePartProps) {
+function UserTextPart({ text }: TextMessagePartProps) {
     return (
-        <div className="rounded-2xl border border-[#e2e8f0] bg-white px-4 py-2 text-sm text-[#0f172a] shadow-md">
-            <p className="whitespace-pre-wrap">{text}</p>
+        <Card className="w-full max-w-[var(--thread-max-width)] border-border bg-card text-card-foreground shadow-sm">
+            <CardContent className="flex items-start gap-3 p-3">
+                <Avatar className="h-8 w-8 border">
+                    <AvatarFallback className="bg-warning/10 text-primary-foreground">
+                        <UserIcon className="h-4 w-4" />
+                    </AvatarFallback>
+                </Avatar>
+                <p className="flex-1 whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
+            </CardContent>
+        </Card>
+    );
+}
+
+function AssistantTextPart({ text }: TextMessagePartProps) {
+    if (!text || !text.trim()) return null;
+    const summaryItems = tryParseJsonSummary(text);
+    if (summaryItems) {
+        return (
+            <div className="space-y-2 text-sm text-muted-foreground">
+                {summaryItems.map((item) => (
+                    <div key={item.label} className="flex flex-wrap gap-2">
+                        <span className="font-semibold text-muted-foreground">
+                            {item.label}
+                        </span>
+                        <span className="text-foreground">
+                            {item.value}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    return (
+        <div className="text-sm text-foreground">
+            <MarkdownText />
+        </div>
+    );
+}
+
+type ToolMessagePart = {
+    type: string;
+    toolCallId?: string;
+    state?: string;
+    args?: unknown;
+    result?: unknown;
+};
+
+function mapToolStatus(state?: string): ToolStatusType {
+    if (!state) return 'ready';
+    if (state.includes('input') || state.includes('streaming')) return 'running';
+    if (state === 'output-available') return 'complete';
+    if (state === 'output-error') return 'error';
+    return 'ready';
+}
+
+function safeStringify(value: unknown): string | null {
+    try {
+        return JSON.stringify(value ?? {});
+    } catch {
+        return null;
+    }
+}
+
+function AssistantToolParts() {
+    // useAuiState selector 必须返回可缓存引用，禁止在 selector 中创建新数组/对象。
+    const messageParts = useAuiState(({ message }) =>
+        Array.isArray(message.parts) ? (message.parts as AnyMessagePart[]) : EMPTY_PARTS,
+    );
+
+    const toolParts = useMemo(
+        () =>
+            messageParts.filter(
+                (part): part is ToolMessagePart =>
+                    typeof part.type === 'string' && part.type.startsWith('tool-'),
+            ),
+        [messageParts],
+    );
+
+    const dedupedToolParts = useMemo(() => {
+        const seen = new Set<string>();
+        const list: ToolMessagePart[] = [];
+        toolParts.forEach((part) => {
+            const toolName = part.type.replace('tool-', '');
+            const payload = part.result ?? part.args;
+            const fingerprint = safeStringify(payload) ?? part.toolCallId ?? toolName;
+            const key = `${toolName}:${fingerprint}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            list.push(part);
+        });
+        return list;
+    }, [toolParts]);
+
+    if (dedupedToolParts.length === 0) return null;
+
+    return (
+        <div className="space-y-3">
+            {dedupedToolParts.map((part, index) => {
+                const toolName = part.type.replace('tool-', '');
+                const statusType = mapToolStatus(part.state);
+                const key = part.toolCallId ?? `${toolName}-${index}`;
+
+                if (toolName === 'displayStockPrice') {
+                    return (
+                        <StockPriceToolPart
+                            key={key}
+                            result={part.result as DisplayStockPricePayload | undefined}
+                            args={part.args as DisplayStockPricePayload | undefined}
+                            statusType={statusType}
+                        />
+                    );
+                }
+
+                if (toolName === 'displayNews') {
+                    return (
+                        <NewsToolPart
+                            key={key}
+                            result={part.result as DisplayNewsPayload | undefined}
+                            args={part.args as DisplayNewsPayload | undefined}
+                            statusType={statusType}
+                        />
+                    );
+                }
+
+                if (toolName === 'displayFinancials') {
+                    return (
+                        <FinancialsToolPart
+                            key={key}
+                            result={part.result as DisplayFinancialsPayload | undefined}
+                            args={part.args as DisplayFinancialsPayload | undefined}
+                            statusType={statusType}
+                        />
+                    );
+                }
+
+                return (
+                    <Message from="assistant" key={key}>
+                        <MessageContent
+                            data-from="assistant"
+                            className="border-0 bg-transparent p-0 shadow-none"
+                        >
+                            <ToolPlaceholder label={toolName} statusType={statusType} />
+                        </MessageContent>
+                    </Message>
+                );
+            })}
         </div>
     );
 }
 
 function UserMessage() {
     return (
-        <MessagePrimitive.Root className="relative flex w-full max-w-[var(--thread-max-width)] flex-row-reverse gap-3 self-center py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-white">
-                <UserIcon className="h-4 w-4" />
-            </div>
+        <MessagePrimitive.Root className="relative flex w-full max-w-[var(--thread-max-width)] flex-row gap-3 self-start py-4">
             <div className="flex flex-col gap-2">
                 <MessagePrimitive.Parts
                     components={{
@@ -240,19 +608,19 @@ function AssistantMessage() {
     const hasText = useAuiState(({ message }) =>
         Array.isArray(message.parts)
             ? message.parts.some(
-                  (part) =>
-                      part.type === 'text' &&
-                      typeof (part as { text?: unknown }).text === 'string' &&
-                      (part as { text?: string }).text?.trim().length > 0,
-              )
+                (part) => {
+                    const text = (part as { text?: unknown }).text;
+                    return part.type === 'text' && typeof text === 'string' && text.trim().length > 0;
+                },
+            )
             : false,
     );
     const hasToolParts = useAuiState(({ message }) =>
         Array.isArray(message.parts)
             ? message.parts.some(
-                  (part) =>
-                      typeof part.type === 'string' && part.type.startsWith('tool-'),
-              )
+                (part) =>
+                    typeof part.type === 'string' && part.type.startsWith('tool-'),
+            )
             : false,
     );
     const hasDataParts = useAuiState(({ message }) =>
@@ -263,30 +631,14 @@ function AssistantMessage() {
     const shouldRender = hasText || hasToolParts || hasDataParts;
     if (!shouldRender) return null;
     return (
-        <MessagePrimitive.Root className="relative flex w-full max-w-[var(--thread-max-width)] gap-3 self-center py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-700">
-                <Bot className="h-4 w-4" />
-            </div>
-            <div className="flex flex-col gap-3">
-                <h1 className="inline-flex items-center gap-2 text-lg font-semibold text-pink-500">
-                    <Sparkles className="h-4 w-4" />
-                    Answer
-                </h1>
-                <MessagePrimitive.Parts
-                    components={{
-                        Text: AssistantTextPart,
-                        tools: {
-                            by_name: {
-                                displayStockPrice: StockPriceToolPart,
-                                displayNews: NewsToolPart,
-                                displayFinancials: FinancialsToolPart,
-                            },
-                            Fallback: ToolFallback,
-                        },
-                    }}
-                />
-                <MessageDataParts />
-            </div>
+        <MessagePrimitive.Root className="relative flex w-full max-w-[var(--thread-max-width)] flex-col gap-3 self-start py-3">
+            <MessagePrimitive.Parts
+                components={{
+                    Text: AssistantTextPart,
+                }}
+            />
+            <AssistantToolParts />
+            <MessageDataParts />
         </MessagePrimitive.Root>
     );
 }
@@ -309,14 +661,16 @@ function ModeSelector({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button
+                <Button
                     type="button"
-                    className="inline-flex items-center gap-2 rounded-full border border-[#e2e8f0] bg-white px-3 py-1 text-xs font-semibold text-[#0f172a] shadow-sm"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-2 rounded-full px-3 text-xs"
                 >
-                    <currentMode.icon className="h-3.5 w-3.5 text-[#0f172a]" />
+                    <currentMode.icon className="h-3.5 w-3.5 text-foreground" />
                     <span>{currentMode.label}</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-[#64748b]" />
-                </button>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
                 {availableOptions.map((option) => {
@@ -331,7 +685,7 @@ function ModeSelector({
                             <option.icon className="h-4 w-4" />
                             {option.label}
                             {isDisabled && (
-                                <span className="ml-auto text-[10px] text-red-500">
+                                <span className="ml-auto text-[10px] text-destructive">
                                     配额不足
                                 </span>
                             )}
@@ -348,47 +702,65 @@ type ChatComposerProps = {
     className?: string;
     inputClassName?: string;
     sendClassName?: string;
+    mode: ChatMode;
+    onModeChange: (nextMode: ChatMode) => void;
+    modeOptions?: typeof MODE_OPTIONS;
+    disabledModes?: Set<ChatMode>;
 };
 
-function ChatComposer({ placeholder, className, inputClassName, sendClassName }: ChatComposerProps) {
+function ChatComposer({
+    placeholder,
+    className,
+    inputClassName,
+    sendClassName,
+    mode,
+    onModeChange,
+    modeOptions,
+    disabledModes,
+}: ChatComposerProps) {
     return (
         <ComposerPrimitive.Root
             className={cn(
-                'flex items-center gap-3 rounded-xl border border-pink-200 bg-white px-2 py-1.5 transition focus-within:border-pink-500 focus-within:ring-1 focus-within:ring-pink-500/30',
+                'flex flex-col gap-3 rounded-3xl border border-border bg-card px-3 py-2.5 shadow-sm transition focus-within:border-muted-foreground',
                 className,
             )}
         >
-            <ComposerPrimitive.Input
-                placeholder={placeholder}
-                className={cn(
-                    'min-h-[48px] flex-1 resize-none bg-transparent px-4 py-3 text-base text-[#0f172a] placeholder:text-[#8b8b8b] outline-none',
-                    inputClassName,
-                )}
-            />
-            <div className="flex items-center gap-2">
+            <PromptInputBody>
+                <ComposerPrimitive.Input
+                    placeholder={placeholder}
+                    className={cn(
+                        'min-h-[72px] flex-1 resize-none bg-transparent px-2 py-2 text-base text-foreground placeholder:text-muted-foreground outline-none',
+                        inputClassName,
+                    )}
+                />
+            </PromptInputBody>
+            <PromptInputFooter>
+                <PromptInputTools>
+                    <ModeSelector
+                        mode={mode}
+                        onChange={onModeChange}
+                        options={modeOptions}
+                        disabledModes={disabledModes}
+                    />
+                </PromptInputTools>
                 <AuiIf condition={({ thread }) => !thread.isRunning}>
-                    <ComposerPrimitive.Send
-                        className={cn(
-                            'inline-flex h-12 w-12 items-center justify-center rounded-full bg-pink-600 text-white transition hover:bg-pink-700',
-                            sendClassName,
-                        )}
-                    >
-                        <Send className="h-5 w-5" />
+                    <ComposerPrimitive.Send asChild>
+                        <PromptInputSubmit className={sendClassName} />
                     </ComposerPrimitive.Send>
                 </AuiIf>
                 <AuiIf condition={({ thread }) => thread.isRunning}>
-                    <ComposerPrimitive.Cancel className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#0f172a] transition hover:bg-[#f1f5f9]">
-                        <Square className="h-4 w-4 fill-current" />
+                    <ComposerPrimitive.Cancel asChild>
+                        <PromptInputStop />
                     </ComposerPrimitive.Cancel>
                 </AuiIf>
-            </div>
+            </PromptInputFooter>
         </ComposerPrimitive.Root>
     );
 }
 
 export default function ChatPage({ params }: ChatPageProps) {
     return (
-        <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+        <Suspense fallback={<div className="flex h-screen items-center justify-center">加载中...</div>}>
             <ChatPageContent params={params} />
         </Suspense>
     );
@@ -412,6 +784,10 @@ function ChatPageContent({ params }: ChatPageProps) {
     const initialMode = searchParams.get('mode');
     const [mode, setMode] = useState<ChatMode>(() => resolveMode(initialMode));
     const reportContextRef = useRef<string | null>(null);
+    const requestStateRef = useRef<{ sessionId: string; mode: ChatMode }>({
+        sessionId,
+        mode,
+    });
     const [quotaByMode, setQuotaByMode] = useState<Record<ChatMode, QuotaInfo> | null>(null);
     const [quotaError, setQuotaError] = useState<string | null>(null);
 
@@ -421,22 +797,29 @@ function ChatPageContent({ params }: ChatPageProps) {
         }
     }, [initialMode]);
 
+    useEffect(() => {
+        requestStateRef.current = { sessionId, mode };
+    }, [mode, sessionId]);
+
     const transportRef = useRef<AssistantChatTransport<UIMessage> | null>(null);
     if (!transportRef.current) {
         transportRef.current = new AssistantChatTransport<UIMessage>({
             api: '/api/agents/chat',
-            body: {
-                session_id: sessionId,
-                mode,
-            },
             prepareSendMessagesRequest: async (options) => {
                 const reportContext = reportContextRef.current;
                 const baseBody = options.body ?? {};
+                const state = requestStateRef.current;
 
                 return {
                     body: {
+                        session_id: state.sessionId,
+                        mode: state.mode,
                         ...baseBody,
                         ...(reportContext ? { reportContext } : {}),
+                        options: {
+                            ...(baseBody as { options?: Record<string, unknown> })?.options,
+                            fromReport: Boolean(reportContext),
+                        },
                         id: options.id,
                         messages: options.messages,
                         trigger: options.trigger,
@@ -448,13 +831,6 @@ function ChatPageContent({ params }: ChatPageProps) {
         });
     }
     const transport = transportRef.current;
-
-    useEffect(() => {
-        transport.body = {
-            session_id: sessionId,
-            mode,
-        };
-    }, [sessionId, mode, transport]);
 
     const chat = useChat({
         id: sessionId,
@@ -470,14 +846,18 @@ function ChatPageContent({ params }: ChatPageProps) {
     });
 
     const { messages, sendMessage, setMessages } = chat;
+    type ReportMessagePart = {
+        type: string;
+        data?: unknown;
+    };
     const reportPart = useMemo(() => {
         for (let i = messages.length - 1; i >= 0; i -= 1) {
             const message = messages[i];
             if (!Array.isArray(message.parts)) continue;
             for (let j = message.parts.length - 1; j >= 0; j -= 1) {
                 const part = message.parts[j];
-                if (part?.type === 'data' && part.name === 'report') {
-                    return part as DataMessagePart;
+                if (part?.type === 'data-report') {
+                    return part as ReportMessagePart;
                 }
             }
         }
@@ -485,11 +865,11 @@ function ChatPageContent({ params }: ChatPageProps) {
     }, [messages]);
     const reportData = reportPart?.data as
         | {
-              report?: unknown;
-              reportId?: number;
-              reportType?: 'consensus' | 'research';
-              runId?: number;
-          }
+            report?: unknown;
+            reportId?: number;
+            reportType?: 'consensus' | 'research';
+            runId?: number;
+        }
         | undefined;
     const isReportMode = Boolean(reportData?.report);
     const followUpOptions = useMemo(
@@ -581,11 +961,11 @@ function ChatPageContent({ params }: ChatPageProps) {
                             const parts = stored?.length
                                 ? stored
                                 : [
-                                      {
-                                          type: 'text',
-                                          text: typeof m.content === 'string' ? m.content : '',
-                                      },
-                                  ];
+                                    {
+                                        type: 'text',
+                                        text: typeof m.content === 'string' ? m.content : '',
+                                    },
+                                ];
 
                             return {
                                 id: m.id?.toString?.() ?? String(m.id ?? crypto.randomUUID()),
@@ -620,102 +1000,120 @@ function ChatPageContent({ params }: ChatPageProps) {
         }
     }, [isInitialLoading, initialPrompt, sendMessage, messages.length]);
 
-    const threadMaxWidth = isReportMode ? '72rem' : '42rem';
+    const threadMaxWidth = isReportMode ? '100%' : '42rem';
     const reportTitle =
         reportData && typeof (reportData.report as { title?: unknown })?.title === 'string'
             ? ((reportData.report as { title?: string })?.title ?? undefined)
             : undefined;
     const reportSummary = reportData
         ? reportData.reportType === 'research'
-            ? ((reportData.report as { executiveSummary?: string })?.executiveSummary ?? undefined)
+            ? ((reportData.report as { summary?: string })?.summary ?? undefined)
             : ((reportData.report as { overallSummary?: string })?.overallSummary ?? undefined)
         : undefined;
     const reportAgentType = reportData?.reportType ?? 'consensus';
     const reportRunId = typeof reportData?.runId === 'number' ? reportData.runId : null;
-    const followUpSummary = reportSummary ?? reportTitle;
+    const reportContext = useMemo(() => buildReportContext(reportData), [reportData]);
     const quotaBanner = quotaError ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {quotaError}
         </div>
     ) : null;
 
     useEffect(() => {
-        reportContextRef.current = isReportMode && followUpSummary ? followUpSummary : null;
-    }, [isReportMode, followUpSummary]);
+        reportContextRef.current = isReportMode ? reportContext : null;
+    }, [isReportMode, reportContext]);
+
+    if (isInitialLoading) {
+        return (
+            <AssistantRuntimeProvider runtime={runtime}>
+                <ThreadPrimitive.Root
+                    className="h-full bg-background text-foreground"
+                    style={{ ['--thread-max-width' as string]: '42rem' }}
+                >
+                    <div className="flex h-full w-full items-center justify-center px-4">
+                        <Card className="w-full max-w-md border-border bg-card shadow-sm">
+                            <CardContent className="flex items-center gap-3 py-6 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                <span>正在加载会话记录...</span>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </ThreadPrimitive.Root>
+            </AssistantRuntimeProvider>
+        );
+    }
 
     return (
         <AssistantRuntimeProvider runtime={runtime}>
             <ThreadPrimitive.Root
-                className="h-full bg-transparent text-[#0f172a]"
+                className="h-full bg-background text-foreground"
                 style={{ ['--thread-max-width' as string]: threadMaxWidth }}
             >
                 <ThreadPrimitive.Empty>
                     <div className="flex h-full w-full items-center justify-center px-4">
                         <div className="flex w-full max-w-[var(--thread-max-width)] grow flex-col gap-12">
                             <div className="flex w-full grow flex-col items-center justify-center">
-                                <p className="text-4xl text-[#0f172a] md:text-5xl">What do you want to know?</p>
-                            </div>
-                            <div className="flex w-full items-center justify-center">
-                                <ModeSelector
-                                    mode={mode}
-                                    onChange={setMode}
-                                    disabledModes={disabledModes}
-                                />
+                                <p className="text-4xl text-foreground md:text-5xl">想了解什么？</p>
                             </div>
                             <ChatComposer
-                                placeholder="Ask anything..."
+                                placeholder="尽管问，带图也行"
                                 className="w-full"
-                                inputClassName="bg-transparent text-[#0f172a] placeholder:text-[#8b8b8b]"
-                                sendClassName="bg-pink-600 text-white hover:bg-pink-700"
+                                inputClassName="bg-transparent"
+                                sendClassName="bg-primary text-primary-foreground hover:bg-primary"
+                                mode={mode}
+                                onModeChange={setMode}
+                                modeOptions={MODE_OPTIONS}
+                                disabledModes={disabledModes}
                             />
                         </div>
                     </div>
                 </ThreadPrimitive.Empty>
 
                 <AuiIf condition={({ thread }) => !thread.isEmpty}>
-                    <ThreadPrimitive.Viewport className="flex h-full w-full flex-col items-center overflow-y-auto scroll-smooth px-4 pt-8">
+                    <ThreadPrimitive.Viewport className="flex h-full w-full flex-col items-start overflow-y-auto scroll-smooth px-4 pt-8">
                         {isReportMode ? (
-                            <div className="flex w-full max-w-[var(--thread-max-width)] flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                                {quotaBanner ? <div className="lg:col-span-2">{quotaBanner}</div> : null}
-                                <div className="flex items-center justify-between lg:col-span-2">
-                                    <div className="flex items-center gap-3">
-                                        <ModeSelector
-                                            mode={mode}
-                                            onChange={setMode}
-                                            options={followUpOptions}
-                                            disabledModes={disabledModes}
-                                        />
-                                        <span className="text-xs text-[#64748b]">
-                                            报告追问仅支持即时/严谨
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="rounded-3xl border border-[#e2e8f0] bg-white p-4 shadow-sm">
-                                    {reportRunId ? (
-                                        <ReportViewer
-                                            agentRunId={reportRunId}
-                                            agentType={reportAgentType}
-                                            initialReport={reportData?.report ?? null}
-                                            reportTitle={reportTitle}
-                                            reportSummary={reportSummary}
-                                            isStreaming={false}
-                                        />
-                                    ) : (
-                                        <div className="text-sm text-[#64748b]">报告加载中...</div>
-                                    )}
-                                </div>
-                                <div className="flex min-h-[60vh] flex-col">
-                                    <ThreadPrimitive.Messages components={{ UserMessage, AssistantMessage }} />
-                                    <div className="min-h-8 grow" />
-                                    <div className="sticky bottom-0 mt-3 flex w-full flex-col items-center justify-end bg-inherit pb-4">
-                                        <ChatComposer
-                                            placeholder="Ask anything..."
-                                            className="w-full"
-                                            inputClassName="bg-transparent text-[#0f172a] placeholder:text-[#8b8b8b]"
-                                            sendClassName="bg-pink-600 text-white hover:bg-pink-700"
-                                        />
-                                    </div>
-                                </div>
+                            <div className="flex w-full max-w-[var(--thread-max-width)] flex-col gap-4">
+                                {quotaBanner ? <div>{quotaBanner}</div> : null}
+                                <ResizablePanelGroup direction="horizontal" className="min-h-[70vh] w-full">
+                                    <ResizablePanel defaultSize={66} minSize={45}>
+                                        <div className="h-full rounded-3xl border border-border bg-card p-4 shadow-sm">
+                                            {reportRunId ? (
+                                                <ReportViewer
+                                                    agentRunId={reportRunId}
+                                                    agentType={reportAgentType}
+                                                    initialReport={(reportData?.report as any) ?? null}
+                                                    reportTitle={reportTitle}
+                                                    reportSummary={reportSummary}
+                                                    isStreaming={false}
+                                                />
+                                            ) : (
+                                                <div className="text-sm text-muted-foreground">报告加载中...</div>
+                                            )}
+                                        </div>
+                                    </ResizablePanel>
+                                    <ResizableHandle className="mx-3" />
+                                    <ResizablePanel defaultSize={34} minSize={25}>
+                                        <div className="flex h-full min-h-[60vh] flex-col">
+                                            <ThreadPrimitive.Messages components={{ UserMessage, AssistantMessage }} />
+                                            <div className="min-h-8 grow" />
+                                            <div className="sticky bottom-0 mt-3 flex w-full flex-col items-start justify-end bg-inherit pb-4">
+                                                <div className="mb-2 text-xs text-muted-foreground">
+                                                    报告追问仅支持即时/严谨
+                                                </div>
+                                                <ChatComposer
+                                                    placeholder="继续追问..."
+                                                    className="w-full"
+                                                    inputClassName="bg-transparent"
+                                                    sendClassName="bg-primary text-primary-foreground hover:bg-primary"
+                                                    mode={mode}
+                                                    onModeChange={setMode}
+                                                    modeOptions={followUpOptions}
+                                                    disabledModes={disabledModes}
+                                                />
+                                            </div>
+                                        </div>
+                                    </ResizablePanel>
+                                </ResizablePanelGroup>
                             </div>
                         ) : (
                             <>
@@ -724,22 +1122,18 @@ function ChatPageContent({ params }: ChatPageProps) {
                                         {quotaBanner}
                                     </div>
                                 ) : null}
-                                <div className="mb-4 flex w-full max-w-[var(--thread-max-width)] items-center justify-between">
-                                    <ModeSelector
-                                        mode={mode}
-                                        onChange={setMode}
-                                        options={MODE_OPTIONS}
-                                        disabledModes={disabledModes}
-                                    />
-                                </div>
                                 <ThreadPrimitive.Messages components={{ UserMessage, AssistantMessage }} />
                                 <div className="min-h-8 grow" />
                                 <div className="sticky bottom-0 mt-3 flex w-full max-w-[var(--thread-max-width)] flex-col items-center justify-end bg-inherit pb-4">
                                     <ChatComposer
-                                        placeholder="Ask anything..."
+                                        placeholder="继续对话..."
                                         className="w-full"
-                                        inputClassName="bg-transparent text-[#0f172a] placeholder:text-[#8b8b8b]"
-                                        sendClassName="bg-pink-600 text-white hover:bg-pink-700"
+                                        inputClassName="bg-transparent"
+                                        sendClassName="bg-primary text-primary-foreground hover:bg-primary"
+                                        mode={mode}
+                                        onModeChange={setMode}
+                                        modeOptions={MODE_OPTIONS}
+                                        disabledModes={disabledModes}
                                     />
                                 </div>
                             </>

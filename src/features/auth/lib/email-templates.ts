@@ -126,7 +126,7 @@ function getBaseUrl(): string | null {
     if (!base) return null;
     try {
         // Validate URL format.
-        // eslint-disable-next-line no-new
+         
         new URL(base);
         return base.replace(/\/$/, '');
     } catch {
@@ -157,11 +157,11 @@ function renderFooterHtml(locale: SupportedLocale): string {
         links.length > 0
             ? `<div style="text-align:center;margin: 10px 0;">
   ${links
-      .map(
-          (l) =>
-              `<a href="${escapeHtml(l.href)}" target="_blank" style="color:#333333;font-size:13px;font-weight:normal;font-family:Arial, sans-serif;line-height:22px;text-decoration:none;margin:0 8px;">${escapeHtml(l.label)}</a>`,
-      )
-      .join('')}
+        .map(
+            (l) =>
+                `<a href="${escapeHtml(l.href)}" target="_blank" style="color:#333333;font-size:13px;font-weight:normal;font-family:Arial, sans-serif;line-height:22px;text-decoration:none;margin:0 8px;">${escapeHtml(l.label)}</a>`,
+        )
+        .join('')}
 </div>`
             : '';
 

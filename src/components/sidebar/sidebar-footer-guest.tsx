@@ -29,7 +29,7 @@ export function SidebarFooterGuest({
     onLoginClick,
     currentTheme,
     onThemeChange,
-    onLocaleChange
+    onLocaleChange,
 }: SidebarFooterGuestProps) {
     const t = useTranslations('sidebar');
 
@@ -46,7 +46,7 @@ export function SidebarFooterGuest({
                 <Button
                     onClick={onLoginClick}
                     size="icon"
-                    className="h-9 w-9 border border-pink-500 text-pink-500 hover:bg-pink-50 rounded-lg"
+                    className="h-9 w-9 rounded-lg border border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                     variant="outline"
                 >
                     <LogIn className="h-4 w-4" />
@@ -64,7 +64,7 @@ export function SidebarFooterGuest({
                         <Button variant="ghost" className="w-full justify-between h-10 px-3 text-muted-foreground hover:text-foreground font-normal hover:bg-accent/50 rounded-sm focus-visible:ring-0 focus-visible:ring-offset-0">
                             <div className="flex items-center gap-2">
                                 <Palette className="h-4 w-4" />
-                                <span className={cn("text-sm font-medium")}>
+                                <span className={cn('text-sm font-medium')}>
                                     {t('appearance') || 'Appearance'}
                                 </span>
                             </div>
@@ -92,7 +92,7 @@ export function SidebarFooterGuest({
                         <Button variant="ghost" className="w-full justify-between h-10 px-3 text-muted-foreground hover:text-foreground font-normal hover:bg-accent/50 rounded-sm focus-visible:ring-0 focus-visible:ring-offset-0">
                             <div className="flex items-center gap-2">
                                 <Languages className="h-4 w-4" />
-                                <span className={cn("text-sm font-medium")}>{t('language') || 'Language'}</span>
+                                <span className={cn('text-sm font-medium')}>{t('language') || 'Language'}</span>
                             </div>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground/60">
                                 {locale === 'en' ? 'English' : (locale === 'zh' ? '中文' : '日本語')}
@@ -110,10 +110,10 @@ export function SidebarFooterGuest({
 
             {/* Learn About Surf Card - Compact - Taller & Inner Detail */}
             <div
-                className="relative overflow-hidden rounded-sm border border-border/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] cursor-pointer group h-11 flex items-center px-3 gap-3 transition-all bg-cover bg-center hover:border-pink-200/50"
+                className="group relative flex h-11 cursor-pointer items-center gap-3 overflow-hidden rounded-sm border border-border/40 bg-cover bg-center px-3 transition-all hover:border-border"
                 onClick={() => window.open('/home', '_self')}
                 style={{
-                    backgroundImage: `url(${currentTheme === 'dark' ? cardBgDark.src : cardBgLight.src})`
+                    backgroundImage: `url(${currentTheme === 'dark' ? cardBgDark.src : cardBgLight.src})`,
                 }}
             >
                 {/* Overlay to ensure text readability */}
@@ -138,8 +138,8 @@ export function SidebarFooterGuest({
                 onClick={onLoginClick}
                 variant="outline"
                 className={cn(
-                    "w-full rounded-md h-11 border border-[#EC4899] text-[#EC4899] font-semibold bg-transparent hover:bg-[#EC4899]/10 transition-all text-sm focus-visible:ring-0 focus-visible:ring-offset-0 shadow-sm",
-                    "dark:border-[#EC4899] dark:text-[#EC4899] dark:hover:bg-[#EC4899]/10"
+                    'w-full rounded-md h-11 border border-primary text-primary font-semibold bg-transparent hover:bg-accent transition-all text-sm focus-visible:ring-0 focus-visible:ring-offset-0 shadow-sm',
+                    'dark:border-primary dark:text-primary dark:hover:bg-accent',
                 )}
             >
                 {t('signInOrUp') || 'Log in or sign up'}

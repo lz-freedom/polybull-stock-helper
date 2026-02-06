@@ -51,11 +51,11 @@ export function AdminSidebar({ locale }: AdminSidebarProps) {
     ];
 
     return (
-        <aside className="w-64 bg-gray-900 text-white flex flex-col">
+        <aside className="w-64 bg-muted text-primary-foreground flex flex-col">
             {/* Logo */}
-            <div className="p-4 border-b border-gray-800">
+            <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-2">
-                    <Shield className="h-8 w-8 text-orange-500" />
+                    <Shield className="h-8 w-8 text-warning" />
                     <span className="text-xl font-bold">{t('title')}</span>
                 </div>
             </div>
@@ -74,8 +74,8 @@ export function AdminSidebar({ locale }: AdminSidebarProps) {
                             className={cn(
                                 'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
                                 isActive
-                                    ? 'bg-orange-600 text-white'
-                                    : 'text-gray-300 hover:bg-gray-800 hover:text-white',
+                                    ? 'bg-warning/10 text-primary-foreground'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-primary-foreground',
                             )}
                         >
                             <item.icon className="h-5 w-5" />
@@ -86,10 +86,10 @@ export function AdminSidebar({ locale }: AdminSidebarProps) {
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-800">
+            <div className="p-4 border-t border-border">
                 <Link
                     href={`/${locale}/dashboard`}
-                    className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white transition-colors"
+                    className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-primary-foreground transition-colors"
                 >
                     <Home className="h-5 w-5" />
                     <span>Back to Dashboard</span>
